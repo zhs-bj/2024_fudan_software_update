@@ -5,7 +5,7 @@ import re
 import numpy as np
 
 # with neo4j running
-graph = Graph("bolt://localhost:7687", auth=("neo4j", "igem2023"))
+graph = Graph("bolt://localhost:7687", auth=("neo4j", "igem2024"))
 graph.delete_all()
 
 def gradient_color_generate(time: str):

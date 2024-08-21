@@ -7,7 +7,6 @@ from os import path
 import config
 from parthub.utils import parthub_search, create_parthub_seq_file, get_part_id
 
-db_config = config.db_config
 parthub_config = config.parthub_config
 template_folder = path.abspath('webUI/template')
 static_folder = path.abspath('webUI/static')

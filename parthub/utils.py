@@ -16,7 +16,7 @@ from flask import jsonify, Response
 from py2neo import Node, Graph, NodeMatcher
 import re
 
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2023"), name="neo4j")
+graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j")
 node_matcher = NodeMatcher(graph)
 
 

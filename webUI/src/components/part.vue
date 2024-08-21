@@ -1,19 +1,12 @@
 <template>
-    <a-drawer
-            :title= "number"
-            placement="right"
-            width="80%"
-            :visible="visible"
-            @close="onClose"
-            :handle="mounted"
-    >
+    <a-drawer :title="number" placement="right" width="80%" :visible="visible" @close="onClose" :handle="mounted">
         <div id="viz"></div>
     </a-drawer>
 </template>
 <script>
 import NeoVis from 'neovis.js';
 export default {
-    props:['number','visible'],
+    props: ['number', 'visible'],
     data() {
         return {
             //loading:true,
@@ -22,7 +15,7 @@ export default {
     mounted() {
         this.draw();
     },
-    methods:{
+    methods: {
         onClose() {
             this.$emit('onClose', false);
         },
@@ -33,7 +26,7 @@ export default {
                 neo4j: {
                     serverUrl: "bolt://54.169.242.254:7687",
                     serverUser: "neo4j",
-                    serverPassword: "igem2023"
+                    serverPassword: "igem2024"
                 },
                 visConfig: {
                     nodes: {
@@ -41,28 +34,28 @@ export default {
                     },
                     edges: {
                         arrows: {
-                            to: {enabled: true}
+                            to: { enabled: true }
                         },
-                        color:'#CCC',
+                        color: '#CCC',
                     },
                 },
                 labels: {
                     Part: {
                         label: "number",
-                        color:'color',
+                        color: 'color',
                     }
                 },
                 relationships: {
-                    'refers to':{
+                    'refers to': {
                         [NeoVis.NEOVIS_ADVANCED_CONFIG]: {
-                            static:{
+                            static: {
                                 label: 'refers to',
                             },
                         },
                     },
-                    'twins':{
+                    'twins': {
                         [NeoVis.NEOVIS_ADVANCED_CONFIG]: {
-                            static:{
+                            static: {
                                 label: 'twins',
                             },
                         },
