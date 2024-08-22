@@ -10,11 +10,10 @@
                             <a-form-item
                                 :rules="{ initialValue: searchQuery, rules: [{ required: true, message: 'Please input your query!' }] }">
                                 <a-input v-model:value="formState.query" :defaultValue="searchQuery" placeholder="...">
-                                    <a-icon slot="prefix" type="search" />
-                                    <a-button slot="suffix" type="primary" html-type="submit">
-                                        Search
-                                    </a-button>
                                 </a-input>
+                                <a-button slot="suffix" type="primary" html-type="submit">
+                                    Search
+                                </a-button>
                             </a-form-item>
                             <a-form-item
                                 :rules="{ initialValue: searchType, rules: [{ required: true, message: 'Please select a search type!' }] }">

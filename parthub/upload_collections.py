@@ -5,7 +5,7 @@ import re
 import numpy as np
 
 # with neo4j running
-graph = Graph("bolt://localhost:7687", auth=("neo4j", "igem2024"))
+graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"))
 graph.delete_all()
 
 def gradient_color_generate(time: str):
@@ -26,7 +26,7 @@ def gradient_color_generate(time: str):
 
 for yr in range(2004, 2024):
     print(f'Addressing {yr}...')
-    data = pd.read_csv(f'~/fudan/PartHub2/collections/{yr}collection.csv')
+    data = pd.read_csv(f'~/fudan2024/parthub/collections/{yr}collection.csv')
     part_node_dict = {}
     part_list = []
     relationship_list = []
