@@ -6,24 +6,20 @@
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }">
                     <div
                         style="text-align: center;height: 100%;padding-bottom: 1.5rem;display: inline-flex;align-items:center;">
-                        <a-form layout="inline" :form="form" @submit="handleSubmit">
-                            <a-form-item>
-                                <a-input :defaultValue="searchQuery" v-decorator="[
-                                    'query',
-                                    { initialValue: searchQuery, rules: [{ required: true, message: 'Please input your query!' }] },
-                                ]" placeholder="...">
+                        <a-form layout="inline" :model="formState" @finish="onFinish" @finishfailed="onFinishFailed">
+                            <a-form-item
+                                :rules="{ initialValue: searchQuery, rules: [{ required: true, message: 'Please input your query!' }] }">
+                                <a-input v-model:value="formState.query" :defaultValue="searchQuery" placeholder="...">
                                     <a-icon slot="prefix" type="search" />
                                     <a-button slot="suffix" type="primary" html-type="submit">
                                         Search
                                     </a-button>
                                 </a-input>
                             </a-form-item>
-                            <a-form-item>
+                            <a-form-item
+                                :rules="{ initialValue: searchType, rules: [{ required: true, message: 'Please select a search type!' }] }">
                                 Search parts by:
-                                <a-radio-group :default-value="searchType" v-decorator="[
-                                    'type',
-                                    { initialValue: searchType, rules: [{ required: true, message: 'Please select a search type!' }] },
-                                ]">
+                                <a-radio-group v-model:value="formState.type" :default-value="searchType">
                                     <a-radio-button value="number">
                                         ID
                                     </a-radio-button>
@@ -61,11 +57,9 @@
 <script>
 import partcard from "@/components/partcard.vue";
 import axios from "axios";
+import { reactive } from 'vue';
 const listData = []
 export default {
-    beforeCreate() {
-        this.form = this.$form.createForm(this, { name: 'search' });
-    },
     created() {
         const searchType = localStorage.getItem('partHubType');
         const searchQuery = localStorage.getItem('partHubQuery');
@@ -94,6 +88,10 @@ export default {
     },
     data() {
         return {
+            formState: reactive({
+                query: '',
+                type: ''
+            }),
             defaultActivate: ['10'],
             searchResults: [],
             searchType: localStorage.getItem('partHubType'),
@@ -104,22 +102,21 @@ export default {
         };
     },
     methods: {
-        async handleSubmit(e) {
-            e.preventDefault();
-            this.form.validateFields(async (err, values) => {
-                if (!err) {
-                    if (values.type === 'sequence') {
-                        const regex = /^[ATCGatcgUu]+$/;
-                        if (!regex.test(values.query)) {
-                            this.$message.warn('The input sequence must be a valid base sequence!');
-                            return;
-                        }
-                    }
-                    localStorage.setItem('partHubQuery', values.query);
-                    localStorage.setItem('partHubType', values.type);
-                    window.location.href = '/parts'
+        onFinish(values) {
+            console.log(values);
+            if (values.type === 'sequence') {
+                const regex = /^[ATCGatcgUu]+$/;
+                if (!regex.test(values.query)) {
+                    this.$message.warn('The input sequence must be a valid base sequence!');
+                    return;
                 }
-            });
+            }
+            localStorage.setItem('partHubQuery', values.query);
+            localStorage.setItem('partHubType', values.type);
+            window.location.href = '/parts'
+        },
+        onFinishFailed(errorInfo) {
+            console.log(errorInfo);
         },
         showPart(num) {
             localStorage.setItem('curPart', num);

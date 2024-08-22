@@ -5,24 +5,18 @@
                 <div
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }">
                     <div style="text-align: center;height: 100%;width: 40%">
-                        <a-form :form="form" @submit="handleSubmit">
-                            <a-form-item>
-                                <a-input v-decorator="[
-                                    'query',
-                                    { rules: [{ required: true, message: 'Please input your query!' }] },
-                                ]" placeholder="...">
+                        <a-form :model="formState" @finish="onFinish" @finishfailed="onFinishFailed">
+                            <a-form-item :rules="[{ required: true, message: 'Please input your query!' }]">
+                                <a-input v-model:value="formState.query" placeholder="...">
                                     <a-icon slot="prefix" type="search" />
                                     <a-button slot="suffix" type="primary" html-type="submit">
                                         Search
                                     </a-button>
                                 </a-input>
                             </a-form-item>
-                            <a-form-item>
+                            <a-form-item :rules="[{ required: true, message: 'Please select a search type!' }]">
                                 Search parts by:
-                                <a-radio-group v-decorator="[
-                                    'type',
-                                    { rules: [{ required: true, message: 'Please select a search type!' }] },
-                                ]">
+                                <a-radio-group v-model:value="formState.type">
                                     <a-radio-button value="number">
                                         ID
                                     </a-radio-button>
@@ -54,36 +48,34 @@
     </a-layout>
 </template>
 <script>
+import { reactive } from 'vue';
 export default {
-    beforeCreate() {
-        this.form = this.$form.createForm(this, { name: 'search' });
-    },
-    components: {
-    },
     data() {
         return {
+            formState: reactive({
+                query: '',
+                type: ''
+            }),
             defaultActivate: ['10'],
         };
     },
     methods: {
-        async handleSubmit(e) {
-            e.preventDefault();
-            this.form.validateFields(async (err, values) => {
-                if (!err) {
-                    console.log(values)
-                    if (values.type === 'sequence') {
-                        const regex = /^[ATCGatcgUu]+$/;
-                        if (!regex.test(values.query)) {
-                            this.$message.warn('The input sequence must be a valid base sequence!');
-                            return;
-                        }
-                    }
-                    localStorage.setItem('partHubQuery', values.query);
-                    localStorage.setItem('partHubType', values.type);
-                    window.location.href = '/parts'
+        onFinish(values) {
+            console.log(values);
+            if (values.type === 'sequence') {
+                const regex = /^[ATCGatcgUu]+$/;
+                if (!regex.test(values.query)) {
+                    this.$message.warn('The input sequence must be a valid base sequence!');
+                    return;
                 }
-            });
+            }
+            localStorage.setItem('partHubQuery', values.query);
+            localStorage.setItem('partHubType', values.type);
+            window.location.href = '/parts'
         },
+        onFinishFailed(errorInfo) {
+            console.log(errorInfo);
+        }
     },
 };
 </script>
