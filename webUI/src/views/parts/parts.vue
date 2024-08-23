@@ -6,7 +6,8 @@
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }">
                     <div
                         style="text-align: center;height: 100%;padding-bottom: 1.5rem;display: inline-flex;align-items:center;">
-                        <a-form layout="inline" :model="formState" @finish="onFinish" @finishfailed="onFinishFailed">
+                        <a-form layout="inline" :model="formState" @finish="onFinish(formState)"
+                            @finishFailed="onFinishFailed(formState)">
                             <a-form-item
                                 :rules="{ initialValue: searchQuery, rules: [{ required: true, message: 'Please input your query!' }] }">
                                 <a-input v-model:value="formState.query" :defaultValue="searchQuery" placeholder="...">
@@ -57,7 +58,12 @@
 import partcard from "@/components/partcard.vue";
 import axios from "axios";
 import { reactive } from 'vue';
-const listData = []
+import { message } from 'ant-design-vue';
+const listData = [];
+const formState = reactive({
+    query: '',
+    type: ''
+});
 export default {
     created() {
         const searchType = localStorage.getItem('partHubType');
@@ -70,15 +76,18 @@ export default {
             'partHubQuery': searchQuery
         })
             .then(response => {
-                this.listData = response.data;
+                console.log(response.data);
                 if (response.data.message) {
-                    this.$message.info(response.data.message);
+                    message.info(response.data.message);
+                }
+                else {
+                    this.listData = response.data;
                 }
                 this.loading = false;
             })
             .catch(error => {
                 console.error(error);
-                this.$message.error(error.message);
+                message.error(error.message);
                 this.loading = false;
             });
     },
@@ -87,10 +96,7 @@ export default {
     },
     data() {
         return {
-            formState: reactive({
-                query: '',
-                type: ''
-            }),
+            formState,
             defaultActivate: ['10'],
             searchResults: [],
             searchType: localStorage.getItem('partHubType'),
@@ -106,7 +112,7 @@ export default {
             if (values.type === 'sequence') {
                 const regex = /^[ATCGatcgUu]+$/;
                 if (!regex.test(values.query)) {
-                    this.$message.warn('The input sequence must be a valid base sequence!');
+                    message.warning('The input sequence must be a valid base sequence!');
                     return;
                 }
             }

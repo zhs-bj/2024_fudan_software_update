@@ -5,7 +5,8 @@
                 <div
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }">
                     <div style="text-align: center;height: 100%;width: 40%">
-                        <a-form :model="formState" @finish="onFinish" @finishfailed="onFinishFailed">
+                        <a-form :model="formState" @finish="onFinish(formState)"
+                            @finishFailed="onFinishFailed(formState)">
                             <a-form-item :rules="[{ required: true, message: 'Please input your query!' }]">
                                 <a-input v-model:value="formState.query" placeholder="...">
                                 </a-input>
@@ -48,13 +49,15 @@
 </template>
 <script>
 import { reactive } from 'vue';
+import { message } from 'ant-design-vue';
+const formState = reactive({
+    query: '',
+    type: ''
+});
 export default {
     data() {
         return {
-            formState: reactive({
-                query: '',
-                type: ''
-            }),
+            formState,
             defaultActivate: ['10'],
         };
     },
@@ -64,7 +67,7 @@ export default {
             if (values.type === 'sequence') {
                 const regex = /^[ATCGatcgUu]+$/;
                 if (!regex.test(values.query)) {
-                    this.$message.warn('The input sequence must be a valid base sequence!');
+                    message.warning('The input sequence must be a valid base sequence!');
                     return;
                 }
             }

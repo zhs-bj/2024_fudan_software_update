@@ -5,7 +5,7 @@ import re
 import numpy as np
 
 # with neo4j running
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"))
+graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024")) # TO BE MODIFIED
 graph.delete_all()
 
 def gradient_color_generate(time: str):
@@ -24,8 +24,14 @@ def gradient_color_generate(time: str):
     hex_rgb = mpl.colors.rgb2hex(cmap(norm(interval.days)))
     return hex_rgb
 
+# Delete previous graph
+# query = '''
+# CALL gds.graph.drop('parthub')
+# '''
+# graph.run(query)
+
 for yr in range(2004, 2024):
-    print(f'Addressing {yr}...')
+    print(f'Uploading {yr}...')
     data = pd.read_csv(f'~/fudan2024/parthub/collections/{yr}collection.csv')
     part_node_dict = {}
     part_list = []
@@ -113,6 +119,7 @@ for yr in range(2004, 2024):
     tx.create(subgraph)
     graph.commit(tx)
 
+print('Creating graph...')
 # create graph
 query = """
 CALL gds.graph.project(
@@ -126,6 +133,7 @@ CALL gds.graph.project(
 """
 graph.run(query)
 
+print('Calculating PageRanks...')
 # calculate PageRanks
 query = '''
 CALL gds.pageRank.write('parthub', {
@@ -152,6 +160,7 @@ SET n.nodesize = (n.pagerank - 0.15000000000000002) / (46.258541601845714 - 0.15
 '''
 graph.run(query)
 
+print('Running Louvain...')
 # run Louvain method
 query = '''
 CALL gds.louvain.write('parthub', {
@@ -160,3 +169,5 @@ relationshipWeightProperty: 'weight'
 })
 '''
 graph.run(query)
+
+print('Done!')

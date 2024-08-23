@@ -16,17 +16,16 @@ from flask import jsonify, Response
 from py2neo import Node, Graph, NodeMatcher
 import re
 
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j")
+graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j") # TO BE MODIFIED
 node_matcher = NodeMatcher(graph)
 
 
-def content_match(node: Node, search_key: str) -> str:
+def content_match(content: str, search_key: str) -> str:
     """
-    :param node: selected node
+    :param content: content of selected node
     :param search_key: inputted search keyword
     :return: content that matches search keyword
     """
-    content = dict(node)['contents']
     content_lst = re.split(' ', content)
     for i in range(len(content_lst)):
         if search_key in content_lst[i]:
@@ -68,7 +67,7 @@ def search_node(search_key: str, search_type: str) -> list[dict[str | Any, str |
         node_dic = dict(node)
         node_dic = {key: value for key, value in node_dic.items() if key in keys_required}
         if search_type == 'contents':
-            node_dic['matchedContents'] = content_match(node, search_key)
+            node_dic['matchedContents'] = content_match(node_dic['contents'], search_key)
             node_dic.pop('contents', None)
             node_dic_list.append(node_dic)
         elif search_type == 'name':
@@ -147,7 +146,7 @@ def parthub_search(search_key: str, search_type: str) -> tuple[Response, int]:
     if all_res:
         return jsonify(sort_node(all_res)), 200
     else:
-        return jsonify({'message': 'No search result found'}), 200
+        return jsonify({'message': f'No search result found: key={search_key}, type={search_type}'}), 200
 
 
 def init_create() -> None:
