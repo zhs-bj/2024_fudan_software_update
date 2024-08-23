@@ -14,8 +14,8 @@ from gensim.models import word2vec
 import logging
 
 
-DATA_PATH = "/home/chc/fudan/similarity/kmer2vec/data/"
-OUTPUT_PATH = "/home/chc/fudan/similarity/data/"
+DATA_PATH = "/home/chc/fudan2024/similarity/kmer2vec/data/"
+OUTPUT_PATH = "/home/chc/fudan2024/similarity/data/"
 N = 70000
 
 # Read in sequences
@@ -72,7 +72,7 @@ for i in tqdm(range(1,n_seq+1)):
     for j in range(0,len(dna[i])-kmer):
         sentence[i] = ''.join(dna[i][j:j+kmer])
 
-f=open(DATA_PATH+"5.txt","w")
+f=open(DATA_PATH+"sequence_separated.txt","w")
 
 for i in tqdm(range(1,n_seq+1)):
     f.write(sentence[i]+' ')
@@ -83,7 +83,7 @@ f.close()
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)  
 sentences = word2vec.Text8Corpus(DATA_PATH+'sequence_separated.txt')  
-model = word2vec.Word2Vec(sentences, sg=1,  window=24,  min_count=1,  negative=5, sample=0.001, hs=0, workers=1,epochs=1,vector_size=100,seed=0)  
+model = word2vec.Word2Vec(sentences, sg=1,  window=24,  min_count=1,  negative=5, sample=0.001, hs=0, workers=1, epochs=1, vector_size=100, seed=0)  
 model.save(DATA_PATH+'sequence_separated_word2vec.model') 
 
 # Calculate sequence embeddings
@@ -97,16 +97,15 @@ for i in range(1,n_seq+1):
 v=[[] for i in range(N)]
 vc=[[] for i in range(N)]
 for i in range(1,n_seq+1):
-    v[i]=0
-for i in range(1,n_seq+1):
-    vc[i]=0
+    v[i]=np.zeros(100)
+    vc[i]=np.zeros(100)
 for ii in tqdm(range(1,n_seq+1)):
     for i in range(0,len(word[ii])):
         if word[ii][i] in model.wv.key_to_index.keys():
-            v[ii]=v[ii]+model.wv[word[ii][i]]/len(word[ii])
+            v[ii]=v[ii]+np.array(model.wv[word[ii][i]]/len(word[ii]))
     for i in range(0,len(word[ii])):
         if word[ii][i] in model.wv.key_to_index.keys():
-            vc[ii]=vc[ii]+(model.wv[word[ii][i]]-v[ii])*(model.wv[word[ii][i]]-v[ii])/len(word[ii])
+            vc[ii]=vc[ii]+np.array((model.wv[word[ii][i]]-v[ii])**2/len(word[ii]))
 
 # Output sequence embeddings
 
