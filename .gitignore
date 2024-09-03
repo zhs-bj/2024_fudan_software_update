@@ -19,8 +19,7 @@ basement_dist
 dist
 template
 static
-parthub/collections/201*
-parthub/collections/202*
+parthub/collections/temp
 biobert
 data
 blast+
