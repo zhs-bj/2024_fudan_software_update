@@ -6,6 +6,7 @@ services:
       - "5000:5000"
     depends_on:
       - parthub
+    restart: always
     environment:
       - SERVER_URL=bolt://localhost:7687 # TO BE MODIFIED
       - SERVER_USER=neo4j

@@ -32,7 +32,7 @@ def gradient_color_generate(time: str):
 
 for yr in range(2004, 2024):
     print(f'Uploading {yr}...')
-    data = pd.read_csv(f'~/fudan2024/parthub/collections/{yr}collection.csv')
+    data = pd.read_csv(f'./parthub/collections/{yr}collection.csv')
     part_node_dict = {}
     part_list = []
     relationship_list = []

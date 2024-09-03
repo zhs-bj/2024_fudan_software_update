@@ -22,3 +22,5 @@ static
 parthub/collections
 biobert
 data
+blast+
+*.tar.gz

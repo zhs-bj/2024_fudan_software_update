@@ -1,6 +1,7 @@
 <template>
     <a-layout id="app" style="min-height: 100vh">
         <a-layout>
+            <headermenu :default-activate="defaultActivate"></headermenu>
             <a-layout-content style="margin: 0">
                 <div
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }">
@@ -48,6 +49,7 @@
     </a-layout>
 </template>
 <script>
+import headermenu from "@/components/headermenu.vue";
 import { reactive } from 'vue';
 import { message } from 'ant-design-vue';
 const formState = reactive({
@@ -55,10 +57,13 @@ const formState = reactive({
     type: ''
 });
 export default {
+    components: {
+        headermenu
+    },
     data() {
         return {
             formState,
-            defaultActivate: ['10'],
+            defaultActivate: ['3'],
         };
     },
     methods: {

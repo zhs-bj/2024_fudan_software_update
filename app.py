@@ -19,11 +19,13 @@ Compress(app)
 def index():
     return render_template('index.html')
 
-
 @app.route('/search')
 def search():
     return render_template('search.html')
 
+@app.route('/burden')
+def burden():
+    return render_template('burden.html')
 
 @app.route('/parthub')
 def parthub():
@@ -41,6 +43,11 @@ def treeMap():
 
 
 # for apis
+@app.route('/api/burden', methods=['POST'])
+def handle_burden_query():
+    data = request.json
+    return None
+
 @app.route('/api/parthub/search', methods=['POST'])
 def handle_parthub_search():
     data = request.json

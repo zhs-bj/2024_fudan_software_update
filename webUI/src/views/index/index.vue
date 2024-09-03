@@ -1,23 +1,7 @@
 <template>
   <a-layout id="app" style="min-height: 100vh">
     <a-layout>
-      <a-layout-header>
-        <div class="logo"></div>
-        <a-menu :default-selected-keys="1" theme="dark" mode="horizontal" :style="{ lineHeight: '64px' }">
-          <a-menu-item key="1" @click="toHome()">
-            <HomeFilled />Home
-          </a-menu-item>
-          <a-menu-item key="2" @click="toBurden()">
-            <AppstoreFilled />Burden Predictor
-          </a-menu-item>
-          <a-menu-item key="3" @click="toParthub()">
-            <DatabaseFilled />PartHub
-          </a-menu-item>
-          <a-menu-item key="4" @click="toGitlab()">
-            <GitlabFilled />Gitlab
-          </a-menu-item>
-        </a-menu>
-      </a-layout-header>
+      <headermenu :default-activate="defaultActivate"></headermenu>
       <a-layout-content style="padding: 0 50px;">
         <div :style="{ background: '#fff', padding: '24px', marginTop: '40px', minHeight: '280px' }">Content</div>
       </a-layout-content>
@@ -29,25 +13,17 @@
 </template>
 
 <script>
-import { HomeFilled, AppstoreFilled, GitlabFilled, DatabaseFilled } from '@ant-design/icons-vue';
+import headermenu from "@/components/headermenu.vue";
 export default {
+  components: {
+    headermenu
+  },
   data() {
     return {
-      collapsed: false,
+      defaultActivate: ['1'],
     };
   },
-  methods: {
-    toHome() { window.location.href = '/'; },
-    toBurden() { window.location.href = '/burden'; },
-    toParthub() { window.location.href = '/parthub'; },
-    toGitlab() {
-      window.open('https://gitlab.igem.org/2024/software-tools/fudan')
-    },
-  },
-  components: {
-    HomeFilled, AppstoreFilled, DatabaseFilled, GitlabFilled
-  },
-};
+}
 </script>
 
 <style scoped>
