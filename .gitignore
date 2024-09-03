@@ -19,8 +19,9 @@ basement_dist
 dist
 template
 static
-parthub/collections/temp
 biobert
+kmer2vec
 data
+!data/seqdump.fasta
 blast+
 *.tar.gz

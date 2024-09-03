@@ -30,13 +30,25 @@ def gradient_color_generate(time: str):
 # '''
 # graph.run(query)
 
+
+# Mapping text embeddings
+text_embedding_mp = {}
+with open('./similarity/data/text_embeddings.csv', 'r') as f: # TO BE MODIFIED
+    for i in range(70000): # TO BE MODIFIED
+        line = f.readline()[:-1]
+        if not line:
+            break
+        part_num, text_embedding = line.split(',')
+        text_embedding = list(map(float, text_embedding.split(' ')))
+        text_embedding_mp.update({part_num: text_embedding})
+
 for yr in range(2004, 2024):
     print(f'Uploading {yr}...')
     data = pd.read_csv(f'./parthub/collections/{yr}collection.csv')
     part_node_dict = {}
     part_list = []
     relationship_list = []
-    for i in tqdm(data.index):
+    for i in data.index:
         part_num = str(data['part_num'].values[i])
         part_name = str(data['part_name'].values[i])
         part_url = str(data['part_url'].values[i])
@@ -70,18 +82,22 @@ for yr in range(2004, 2024):
             part_used_list = []
             part_using_list = []
             part_twins_list = []
+        try:
+            text_embedding = text_embedding_mp[str(part_num)]
+        except:
+            text_embedding = [0] * 768
         part_node = Node('Part', number=str(part_num), name=part_name, url=part_url, description=part_desc, type=part_type,
                         team=part_team, sequence=part_sequence, contents=part_contents, released=part_released,
                         sample=part_sample, assemble=part_assemble, length=part_len, date=part_date,
                         isfavorite=str(part_isfavorite), twins=part_twins_list, twins_num=str(len(part_twins_list)),
                         cited_by=part_used_list, year=part_year, cites=str(len(part_used_list)), ref=part_using_list,
                         citing=str(len(part_using_list)), designer=part_designer, prweight=max(1,len(part_used_list) * 0.5+len(part_using_list)+0.75 * len(part_twins_list)),
-                        color=gradient_color_generate(part_date))
+                        color=gradient_color_generate(part_date), textEmbedding=text_embedding)
         part_list.append(part_node)
         part_node_dict.update({str(part_num): part_node})
     twins_set_list = []
     twins_node_list = []
-    for pNode in tqdm(part_node_dict.values()):
+    for pNode in part_node_dict.values():
         if pNode['ref']:
             for ref_part in pNode['ref']:
                 try:
@@ -127,6 +143,7 @@ CALL gds.graph.project(
 'Part',
 'refers to',
 {
+    nodeProperties: ['textEmbedding'],
     relationshipProperties: 'weight'
 }
 )
@@ -147,11 +164,11 @@ YIELD nodePropertiesWritten, ranIterations
 graph.run(query)
 
 # get max pagerank and min pagerank
-query = '''
-MATCH (n:Part)
-RETURN max(n.pagerank) AS max_val, min(n.pagerank) AS min_val
-'''
-graph.run(query)
+# query = '''
+# MATCH (n:Part)
+# RETURN max(n.pagerank) AS max_val, min(n.pagerank) AS min_val
+# '''
+# graph.run(query)
 
 # generate nodesize
 query = '''
@@ -167,6 +184,21 @@ CALL gds.louvain.write('parthub', {
 writeProperty: 'community',
 relationshipWeightProperty: 'weight'
 })
+'''
+graph.run(query)
+
+print('Calculating KNN...')
+# Calculate KNN
+query = '''
+CALL gds.knn.write('parthub', {
+    writeRelationshipType: 'SIMILAR',
+    writeProperty: 'score',
+    topK: 5,
+    randomSeed: 233,
+    concurrency: 1,
+    nodeProperties: ['textEmbedding']
+})
+YIELD nodesCompared, relationshipsWritten
 '''
 graph.run(query)
 

@@ -10,6 +10,7 @@ COPY app.py /app/
 COPY config.py /app/
 COPY parthub/collections/* /app/parthub/collections/
 COPY similarity/data/seqdump.fasta /app/similarity/data/seqdump.fasta
+COPY similarity/data/text_embeddings.csv /app/similarity/data/text_embeddings.csv
 COPY flask-compose.sh /app/
 # TO BE MODIFIED
 COPY ncbi-blast-2.16.0+-x64-linux.tar.gz /app/
