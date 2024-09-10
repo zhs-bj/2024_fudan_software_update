@@ -23,5 +23,6 @@ biobert
 kmer2vec
 data
 !data/seqdump.fasta
+!data/text_embeddings.csv
 blast+
 *.tar.gz

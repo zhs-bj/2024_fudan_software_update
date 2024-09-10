@@ -1,6 +1,7 @@
 <template>
     <a-layout id="app" style="min-height: 100vh">
         <a-layout>
+            <headermenu :default-activate="defaultActivate"></headermenu>
             <a-layout-content style="margin: 0">
                 <div
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center' }">
@@ -55,6 +56,7 @@
     </a-layout>
 </template>
 <script>
+import headermenu from "@/components/headermenu.vue";
 import partcard from "@/components/partcard.vue";
 import axios from "axios";
 import { reactive } from 'vue';
@@ -92,12 +94,13 @@ export default {
             });
     },
     components: {
-        partcard
+        partcard,
+        headermenu
     },
     data() {
         return {
             formState,
-            defaultActivate: ['10'],
+            defaultActivate: ['3'],
             searchResults: [],
             searchType: localStorage.getItem('partHubType'),
             searchQuery: localStorage.getItem('partHubQuery'),

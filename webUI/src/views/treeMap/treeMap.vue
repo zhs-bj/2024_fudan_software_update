@@ -1,6 +1,7 @@
 <template>
     <a-layout id="app" style="min-height: 100vh">
         <a-layout>
+            <headermenu :default-activate="defaultActivate"></headermenu>
             <a-layout-content style="margin: 0">
                 <div
                     :style="{ padding: '0', background: '#fff6f0', minHeight: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center' }">
@@ -27,10 +28,12 @@
                             <p id="length"></p>
                             <p id="contents"></p>
                             <p id></p>
-                            <template slot="actions">
-                                <a id="sequence"><a-icon type="download" /> Download sequence</a>
-                                <a id="url"><a-icon type="link" /> View in iGEM Parts Registry</a>
-                            </template>
+                            <a id="sequence">
+                                <DownloadOutlined /> Download sequence
+                            </a>
+                            <a id="url">
+                                <LinkOutlined /> View in iGEM Parts Registry
+                            </a>
                         </a-card>
                     </div>
                 </div>
@@ -42,8 +45,10 @@
     </a-layout>
 </template>
 <script>
+import headermenu from "@/components/headermenu.vue";
 import NeoVis from 'neovis.js';
 import axios from "axios";
+import { DownloadOutlined, LinkOutlined } from '@ant-design/icons-vue';
 function createTable(info) {
     var idobj = document.getElementById('title');
     idobj.innerText = info.number;
@@ -75,6 +80,7 @@ function createTable(info) {
 }
 export default {
     components: {
+        DownloadOutlined, LinkOutlined, headermenu
     },
     created() {
         const curPart = localStorage.getItem('curPart');
@@ -87,7 +93,7 @@ export default {
     },
     data() {
         return {
-            defaultActivate: ['10'],
+            defaultActivate: ['3'],
             curPart: null,
             loading: true,
             node: null,
@@ -152,8 +158,17 @@ export default {
                                     },
                                 },
                             },
+                            'SIMILAR': {
+                                [NeoVis.NEOVIS_ADVANCED_CONFIG]: {
+                                    static: {
+                                        label: 'text similar',
+                                        width: 3,
+                                    },
+                                },
+                            },
                         },
-                        initialCypher: `MATCH (n)-[r*0..]->(m:Part{number:'${this.curPart}'}) RETURN n,r,m UNION MATCH (n:Part{number:'${this.curPart}'})-[r*0..]->(m) RETURN n,r,m LIMIT 150`
+                        initialCypher: `MATCH (n)-[r*0..2]->(m:Part{number:'${this.curPart}'}) RETURN n,r,m LIMIT 150 UNION MATCH (n:Part{number:'${this.curPart}'})-[r*0..2]->(m) RETURN n,r,m LIMIT 150`
+                        //initialCypher: `MATCH (n)-[r*0..]->(m:Part{number:'${this.curPart}'}) RETURN n,r,m LIMIT 150 UNION MATCH (n:Part{number:'${this.curPart}'})-[r*0..]->(m) RETURN n,r,m LIMIT 150`
                     };
                     viz = new NeoVis(config);
                     var doubleClickLocked = false;

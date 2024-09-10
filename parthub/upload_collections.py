@@ -8,6 +8,11 @@ import numpy as np
 graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024")) # TO BE MODIFIED
 graph.delete_all()
 
+query = '''
+CALL gds.graph.drop('parthub')
+'''
+graph.run(query)
+
 def gradient_color_generate(time: str):
     from datetime import datetime
     import matplotlib as mpl
@@ -43,7 +48,7 @@ with open('./similarity/data/text_embeddings.csv', 'r') as f: # TO BE MODIFIED
         text_embedding_mp.update({part_num: text_embedding})
 
 for yr in range(2004, 2024):
-    print(f'Uploading {yr}...')
+    print(f'Uploading {yr}...', flush=True)
     data = pd.read_csv(f'./parthub/collections/{yr}collection.csv')
     part_node_dict = {}
     part_list = []
@@ -76,7 +81,7 @@ for yr in range(2004, 2024):
                 part_used_list = []
             if part_using == 'self' or part_using == '':
                 part_using_list = []
-            if part_twins == 'None' or part_twins == '' or part_twins == 'N o n e':
+            if part_twins == 'None' or part_twins == '' or part_twins == 'N o n e' or part_twins.lower() == 'nan':
                 part_twins_list = []
         except:
             part_used_list = []
@@ -135,7 +140,7 @@ for yr in range(2004, 2024):
     tx.create(subgraph)
     graph.commit(tx)
 
-print('Creating graph...')
+print('Creating graph...', flush=True)
 # create graph
 query = """
 CALL gds.graph.project(
@@ -150,7 +155,7 @@ CALL gds.graph.project(
 """
 graph.run(query)
 
-print('Calculating PageRanks...')
+print('Calculating PageRanks...', flush=True)
 # calculate PageRanks
 query = '''
 CALL gds.pageRank.write('parthub', {
@@ -175,7 +180,7 @@ query = '''
 MATCH (n:Part)
 SET n.nodesize = (n.pagerank - 0.15000000000000002) / (46.258541601845714 - 0.15000000000000002) * 90 + 30
 '''
-graph.run(query)
+graph.run(query, flush=True)
 
 print('Running Louvain...')
 # run Louvain method
@@ -187,12 +192,13 @@ relationshipWeightProperty: 'weight'
 '''
 graph.run(query)
 
-print('Calculating KNN...')
+print('Calculating KNN...', flush=True)
 # Calculate KNN
 query = '''
 CALL gds.knn.write('parthub', {
     writeRelationshipType: 'SIMILAR',
     writeProperty: 'score',
+    similarityCutoff: 0.75,
     topK: 5,
     randomSeed: 233,
     concurrency: 1,
