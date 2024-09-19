@@ -10,7 +10,3 @@ else
     ./blast+/bin/makeblastdb -in similarity/data/seqdump.fasta -dbtype nucl
     python app.py --host=0.0.0.0
 fi
-
-# blastn -query /home/chc/fudan2024/similarity/data/temp_query.fasta \
-#  -db /home/chc/fudan2024/similarity/data/seqdump.fasta \
-#  -out /home/chc/fudan2024/similarity/data/query_ans.txt -evalue 1e-5 -outfmt 6

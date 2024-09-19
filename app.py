@@ -6,6 +6,7 @@ from os import path
 
 import config
 from parthub.utils import parthub_search, create_parthub_seq_file, get_part_id
+from similarity.utils import query_similarity
 
 parthub_config = config.parthub_config
 template_folder = path.abspath('webUI/template')
@@ -68,9 +69,23 @@ def handle_parthub_config():
     return jsonify({'id': get_part_id(data.get('curPart')), 'config': parthub_config}), 200
 
 
+@app.route('/api/parthub/query_similarity', methods=['POST'])
+def handle_query_similarity():
+    data = request.json
+    if not data or not data.get('curPart'):
+        app.logger.warning('Missing curPart')
+        return jsonify({"message": "Missing curPart"}), 400
+    curPart = data.get('curPart')
+    res = query_similarity(curPart)
+    if res is None:
+        return jsonify({"message": "Similarity query failed"}), 500
+    return jsonify({"result": res}), 200
+
+
 # @app.route('/api/test/connection')
 # def handle_test_connection():
 #     return test_connection()
+
 
 
 # for file download
@@ -89,5 +104,6 @@ def handle_seq_download(part_id):
 
 
 if __name__ == '__main__':
-    print('Starting server!')
-    app.run(host='0.0.0.0')
+    print('Starting Flask server...')
+    app.run(debug=True, host='0.0.0.0', port=5000) # TO BE MODIFIED
+    print('Flask server started!')

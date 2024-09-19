@@ -25,13 +25,13 @@
                             <p id="date"></p>
                             <p id="team"></p>
                             <p id="designer"></p>
-                            <p id="length"></p>
-                            <p id="contents"></p>
-                            <p id></p>
-                            <a id="sequence">
+                            <p id="length" v-show="neovis_selected_edge"></p>
+                            <p id="contents" v-show="neovis_selected_edge"></p>
+                            <p id="category" v-show="neovis_selected_edge"></p>
+                            <a id="sequence" v-show="neovis_selected_edge">
                                 <DownloadOutlined /> Download sequence
                             </a>
-                            <a id="url">
+                            <a id="url" v-show="neovis_selected_edge">
                                 <LinkOutlined /> View in iGEM Parts Registry
                             </a>
                         </a-card>
@@ -69,6 +69,8 @@ function createTable(info) {
     teamobj.innerText = "Team: " + info.team;
     var dsnobj = document.getElementById('designer');
     dsnobj.innerText = "Designer: " + info.designer;
+    var catobj = document.getElementById('category');
+    catobj.innerText = "Category: " + info.category;
     var seqobj = document.getElementById('sequence');
     seqobj.href = "/seq/download/" + info.number;
     seqobj.target = "_blank";
@@ -77,6 +79,28 @@ function createTable(info) {
     var urlobj = document.getElementById('url');
     urlobj.href = info.url;
     urlobj.target = "_blank";
+}
+function createEdgeTable(info, startNode, endNode) {
+    var idobj = document.getElementById('title');
+    idobj.innerText = 'Relationship: ' + info.type;
+    var nameobj = document.getElementById('name');
+    nameobj.innerText = "From: " + startNode.number + " - " + startNode.name;
+    var typeobj = document.getElementById('type');
+    typeobj.innerText = "To: " + endNode.number + " - " + endNode.name;
+    var dateobj = document.getElementById('date');
+    var teamobj = document.getElementById('team');
+    var dsnobj = document.getElementById('designer');
+    if (info.type == 'similar') {
+        var scores = info.properties;
+        dateobj.innerText = "Sequence similarity: " + scores.seq_score;
+        teamobj.innerText = "Category similarity: " + scores.cat_score;
+        dsnobj.innerText = "Overall similarity: " + scores.overall_score;
+    }
+    else {
+        dateobj.innerText = ''
+        teamobj.innerText = ''
+        dsnobj.innerText = ''
+    }
 }
 export default {
     components: {
@@ -97,12 +121,25 @@ export default {
             curPart: null,
             loading: true,
             node: null,
+            neovis_selected_edge: false,
         };
     },
     mounted() {
-        this.draw();
+        this.query_similarity();
     },
     methods: {
+        query_similarity() {
+            axios.post('/api/parthub/query_similarity', {
+                'curPart': this.curPart
+            })
+                .then(response => {
+                    this.draw();
+                })
+                .catch(error => {
+                    console.error(error);
+                    this.$message.error(error.message);
+                });
+        },
         draw() {
             axios.post('/api/parthub/config', {
                 'curPart': this.curPart
@@ -110,7 +147,6 @@ export default {
                 .then(response => {
                     var neo4jConfig = response.data.config;
                     var ids = [parseInt(response.data.id)];
-                    var viz;
                     var config = {
                         containerId: "viz",
                         neo4j: neo4jConfig,
@@ -122,7 +158,6 @@ export default {
                                 },
                             },
                             edges: {
-                                color: '#CCC',
                                 font: {
                                     face: 'HarmonyOS_Sans',
                                 },
@@ -142,39 +177,45 @@ export default {
                         },
                         relationships: {
                             'refers to': {
+                                color: '#CCCCCC',
                                 [NeoVis.NEOVIS_ADVANCED_CONFIG]: {
                                     static: {
                                         label: 'refers to',
-                                        width: 7,
+                                        width: 2,
                                         arrows: 'to'
                                     },
                                 },
                             },
                             'twins': {
+                                color: '#CCCCCC',
                                 [NeoVis.NEOVIS_ADVANCED_CONFIG]: {
                                     static: {
                                         label: 'twins',
-                                        width: 3,
+                                        width: 1.5,
                                     },
                                 },
                             },
-                            'SIMILAR': {
+                            'similar': {
+                                color: '#F1DEA6',
                                 [NeoVis.NEOVIS_ADVANCED_CONFIG]: {
                                     static: {
-                                        label: 'text similar',
-                                        width: 3,
+                                        label: 'similar',
+                                        width: 6,
                                     },
                                 },
-                            },
+                            }
                         },
-                        initialCypher: `MATCH (n)-[r*0..2]->(m:Part{number:'${this.curPart}'}) RETURN n,r,m LIMIT 150 UNION MATCH (n:Part{number:'${this.curPart}'})-[r*0..2]->(m) RETURN n,r,m LIMIT 150`
-                        //initialCypher: `MATCH (n)-[r*0..]->(m:Part{number:'${this.curPart}'}) RETURN n,r,m LIMIT 150 UNION MATCH (n:Part{number:'${this.curPart}'})-[r*0..]->(m) RETURN n,r,m LIMIT 150`
+                        initialCypher: `MATCH (n)-[r:\`refers to\`|twins]->{1,3}(m:Part{number:'${this.curPart}'}) RETURN n,r,m LIMIT 100 ` +
+                            `UNION MATCH (n:Part{number:'${this.curPart}'})-[r:\`refers to\`|twins]->{1,3}(m) RETURN n,r,m LIMIT 100 ` +
+                            `UNION MATCH (n:Part{number:'${this.curPart}'})-[r:similar]-(m) RETURN n,r,m LIMIT 60`,
                     };
                     viz = new NeoVis(config);
                     var doubleClickLocked = false;
                     var selectNodeLocked = false;
+                    var selectEdgeLocked = false;
                     viz.registerOnEvent("clickNode", () => {
                         viz.network.on('selectNode', function (properties) {
+                            this.neovis_selected_edge = false;
                             if (!selectNodeLocked) {
                                 selectNodeLocked = true;
                                 var ids = properties.nodes;
@@ -189,6 +230,7 @@ export default {
                             }
                         });
                         viz.network.on('doubleClick', function (properties) {
+                            this.neovis_selected_edge = false;
                             if (!doubleClickLocked) {
                                 doubleClickLocked = true;
                                 var ids = properties.nodes;
@@ -202,11 +244,35 @@ export default {
                             }
                         });
                     });
+                    viz.registerOnEvent("clickEdge", () => {
+                        viz.network.on('selectEdge', function (properties) {
+                            this.neovis_selected_edge = true;
+                            if (!selectEdgeLocked) {
+                                selectEdgeLocked = true;
+                                var ids = properties.edges;
+                                var clickedEdges = viz.edges.get(ids);
+                                console.log(clickedEdges);
+                                if (clickedEdges) {
+                                    var info = clickedEdges[0].raw;
+                                    var edgeNodes = viz.nodes.get([info.start, info.end]);
+                                    var startNode = edgeNodes[0].raw.properties;
+                                    var endNode = edgeNodes[1].raw.properties;
+                                    createEdgeTable(info, startNode, endNode);
+                                }
+                                setTimeout(function () {
+                                    selectEdgeLocked = false;
+                                }, 300);
+                            }
+                        });
+                    });
                     viz.registerOnEvent("completed", () => {
                         viz.network.on('stabilizationIterationsDone', function () {
+                            this.neovis_selected_edge = false;
                             this.loading = false;
                             viz.network.selectNodes(ids);
                             var selectedNodes = viz.nodes.get(ids);
+                            console.log(selectedNodes);
+                            console.log(selectedNodes[0].raw.properties);
                             if (selectedNodes) {
                                 createTable(selectedNodes[0].raw.properties);
                             }

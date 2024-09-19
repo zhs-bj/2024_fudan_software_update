@@ -20,6 +20,17 @@ module.exports = {
       // extracted common chunks and vendor chunks.
       //chunks: ['chunk-vendors', 'chunk-common', 'index']
     },
+    burden: {
+      // entry for the pages
+      entry: "src/views/burden/burden.js",
+      // the source template
+      template: "src/views/burden/burden.html",
+      // output as dist/index.html
+      filename: "burden.html",
+      // when using title option,
+      // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
+      title: "Burden Analysis | xxx",
+    },
     PartHub: {
       // entry for the pages
       entry: "src/views/parthub/parthub.js",

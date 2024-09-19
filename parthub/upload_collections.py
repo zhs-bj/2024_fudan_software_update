@@ -3,19 +3,27 @@ import pandas as pd
 from tqdm import tqdm
 import re
 import numpy as np
+from datetime import datetime
+import matplotlib as mpl
 
 # with neo4j running
 graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024")) # TO BE MODIFIED
 graph.delete_all()
 
-query = '''
-CALL gds.graph.drop('parthub')
+query= '''
+CALL gds.graph.exists('parthub')
+  YIELD exists
+RETURN exists
 '''
-graph.run(query)
+parthub_exists = graph.run(query).data()[0]['exists']
+if parthub_exists:
+    print('Graph parthub already exists, deleting it...')
+    query = '''
+    CALL gds.graph.drop('parthub')
+    '''
+    graph.run(query)
 
-def gradient_color_generate(time: str):
-    from datetime import datetime
-    import matplotlib as mpl
+def get_node_color(time: str, is_basic: bool):
     begin_time = datetime.strptime('2004-1-1', r'%Y-%m-%d')
     try:
         exact_time = datetime.strptime(time, r'%Y-%m-%d')
@@ -25,7 +33,10 @@ def gradient_color_generate(time: str):
     max_interavl = now - begin_time
     interval = now - exact_time
     norm = mpl.colors.Normalize(vmin=0, vmax=max_interavl.days)
-    cmap = mpl.colormaps.get_cmap('plasma')
+    if is_basic:
+        cmap = mpl.colors.LinearSegmentedColormap.from_list('basic_color', ['#6e6dda', '#cacaf6'])
+    else:
+        cmap = mpl.colors.LinearSegmentedColormap.from_list('composite_color', ['#0987db', '#b4dbf4'])
     hex_rgb = mpl.colors.rgb2hex(cmap(norm(interval.days)))
     return hex_rgb
 
@@ -36,21 +47,10 @@ def gradient_color_generate(time: str):
 # graph.run(query)
 
 
-# Mapping text embeddings
-text_embedding_mp = {}
-with open('./similarity/data/text_embeddings.csv', 'r') as f: # TO BE MODIFIED
-    for i in range(70000): # TO BE MODIFIED
-        line = f.readline()[:-1]
-        if not line:
-            break
-        part_num, text_embedding = line.split(',')
-        text_embedding = list(map(float, text_embedding.split(' ')))
-        text_embedding_mp.update({part_num: text_embedding})
-
+part_node_dict = {}
 for yr in range(2004, 2024):
     print(f'Uploading {yr}...', flush=True)
     data = pd.read_csv(f'./parthub/collections/{yr}collection.csv')
-    part_node_dict = {}
     part_list = []
     relationship_list = []
     for i in data.index:
@@ -68,41 +68,43 @@ for yr in range(2004, 2024):
         part_assemble = str(data['assemble_std'].values[i])
         part_used = str(data['parts_used'].values[i])
         part_using = str(data['using_parts'].values[i])
+        part_using_deep = str(data['using_parts_deep'].values[i])
         part_len = str(data['len'].values[i])
         part_date = str(data['date'].values[i])
         part_isfavorite = str(data['isfavorite'].values[i])
         part_year = str(data['year'].values[i])
         part_designer = str(data['designer'].values[i])
+        part_category = str(data['category'].values[i])
         try:
             part_used_list = part_used.split(' ')
             part_using_list = part_using.split(' ')
+            part_using_deep_list = part_using_deep.split(' ')
             part_twins_list = part_twins.split(' ')
-            if part_used == 'None' or part_used == '' or part_used == 'N o n e':
+            if part_used == 'None' or part_used == '' or part_used == 'N o n e' or part_used.lower() == 'nan':
                 part_used_list = []
-            if part_using == 'self' or part_using == '':
+            if part_using == 'self' or part_using == '' or part_using.lower() == 'nan':
                 part_using_list = []
             if part_twins == 'None' or part_twins == '' or part_twins == 'N o n e' or part_twins.lower() == 'nan':
                 part_twins_list = []
+            if part_using_deep == 'self' or part_using_deep == '' or part_using_deep.lower() == 'nan':
+                part_using_deep_list = []
         except:
             part_used_list = []
             part_using_list = []
             part_twins_list = []
-        try:
-            text_embedding = text_embedding_mp[str(part_num)]
-        except:
-            text_embedding = [0] * 768
+            part_using_deep_list = []
+        part_is_basic = (len(part_using_list) == 0)
         part_node = Node('Part', number=str(part_num), name=part_name, url=part_url, description=part_desc, type=part_type,
                         team=part_team, sequence=part_sequence, contents=part_contents, released=part_released,
                         sample=part_sample, assemble=part_assemble, length=part_len, date=part_date,
                         isfavorite=str(part_isfavorite), twins=part_twins_list, twins_num=str(len(part_twins_list)),
-                        cited_by=part_used_list, year=part_year, cites=str(len(part_used_list)), ref=part_using_list,
+                        cited_by=part_used_list, year=part_year, cites=str(len(part_used_list)), ref=part_using_list, deep_subparts=part_using_deep_list,
                         citing=str(len(part_using_list)), designer=part_designer, prweight=max(1,len(part_used_list) * 0.5+len(part_using_list)+0.75 * len(part_twins_list)),
-                        color=gradient_color_generate(part_date), textEmbedding=text_embedding)
+                        color=get_node_color(part_date, part_is_basic), category=part_category)
         part_list.append(part_node)
         part_node_dict.update({str(part_num): part_node})
-    twins_set_list = []
-    twins_node_list = []
-    for pNode in part_node_dict.values():
+    twins_set = set()
+    for pNode in part_list:
         if pNode['ref']:
             for ref_part in pNode['ref']:
                 try:
@@ -117,16 +119,15 @@ for yr in range(2004, 2024):
                 try:
                     pNode2 = part_node_dict[twin_part]
                     if pNode2['number'] != pNode['number']:
-                        if set([pNode2['number'],pNode['number']]) not in twins_set_list:
+                        if set([pNode2['number'],pNode['number']]) not in twins_set:
                             relationShip = Relationship(pNode, 'twins', pNode2)
                             relationship_list.append(relationShip)
-                            twins_set_list.append(set([pNode2['number'],pNode['number']]))
+                            twins_set.add(set([pNode2['number'],pNode['number']]))
                 except:
                     pass
         if pNode['cited_by']:
             for cite_part in pNode['cited_by']:
                 try:
-                    pNode3 = part_node_dict[cite_part]
                     pNode3 = part_node_dict[cite_part]
                     relationShip = Relationship(pNode3, 'refers to', pNode)
                     relationShip["weight"] = pNode3['prweight']
@@ -134,11 +135,12 @@ for yr in range(2004, 2024):
                 except:
                     pass
     relationship_list = list(set(relationship_list))
-
+    
     subgraph = Subgraph(part_list, relationship_list)
     tx = graph.begin()
     tx.create(subgraph)
     graph.commit(tx)
+
 
 print('Creating graph...', flush=True)
 # create graph
@@ -148,7 +150,6 @@ CALL gds.graph.project(
 'Part',
 'refers to',
 {
-    nodeProperties: ['textEmbedding'],
     relationshipProperties: 'weight'
 }
 )
@@ -168,13 +169,6 @@ YIELD nodePropertiesWritten, ranIterations
 '''
 graph.run(query)
 
-# get max pagerank and min pagerank
-# query = '''
-# MATCH (n:Part)
-# RETURN max(n.pagerank) AS max_val, min(n.pagerank) AS min_val
-# '''
-# graph.run(query)
-
 # generate nodesize
 query = '''
 MATCH (n:Part)
@@ -192,20 +186,20 @@ relationshipWeightProperty: 'weight'
 '''
 graph.run(query)
 
-print('Calculating KNN...', flush=True)
+# print('Calculating KNN...', flush=True)
 # Calculate KNN
-query = '''
-CALL gds.knn.write('parthub', {
-    writeRelationshipType: 'SIMILAR',
-    writeProperty: 'score',
-    similarityCutoff: 0.75,
-    topK: 5,
-    randomSeed: 233,
-    concurrency: 1,
-    nodeProperties: ['textEmbedding']
-})
-YIELD nodesCompared, relationshipsWritten
-'''
-graph.run(query)
+# query = '''
+# CALL gds.knn.write('parthub', {
+#     writeRelationshipType: 'SIMILAR',
+#     writeProperty: 'score',
+#     similarityCutoff: 0.75,
+#     topK: 5,
+#     randomSeed: 233,
+#     concurrency: 1,
+#     nodeProperties: ['textEmbedding']
+# })
+# YIELD nodesCompared, relationshipsWritten
+# '''
+# graph.run(query)
 
 print('Done!')

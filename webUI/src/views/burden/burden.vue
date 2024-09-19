@@ -8,62 +8,42 @@
                     <div style="text-align: center;height: 100%;width: 40%">
                         <a-form :model="formState" @finish="onFinish(formState)"
                             @finishFailed="onFinishFailed(formState)">
-                            <a-form-item :rules="[{ required: true, message: '' }]">
-                                <a-select v-model:value="formState.prom" placeholder="Select promoter..."
-                                    style="width: 300px" :options="items.map(item => ({ value: item }))">
-                                    <template #dropdownRender="{ menuNode: menu }">
-                                        <v-nodes :vnodes="menu" />
-                                        <a-divider style="margin: 4px 0" />
-                                        <a-space style="padding: 4px 8px">
-                                            <a-input ref="inputRef" v-model:value="name"
-                                                placeholder="Enter promoter sequence..." />
-                                            <a-button type="text" @click="addItem">
-                                                <template #icon>
-                                                    <plus-outlined />
-                                                </template>
-                                                Add promoter
-                                            </a-button>
-                                        </a-space>
-                                    </template>
-                                </a-select>
-                                <a-select v-model:value="formState.rbs" placeholder="Select RBS..." style="width: 300px"
-                                    :options="items.map(item => ({ value: item }))">
-                                    <template #dropdownRender="{ menuNode: menu }">
-                                        <v-nodes :vnodes="menu" />
-                                        <a-divider style="margin: 4px 0" />
-                                        <a-space style="padding: 4px 8px">
-                                            <a-input ref="inputRef" v-model:value="name"
-                                                placeholder="Enter RBS sequence..." />
-                                            <a-button type="text" @click="addItem">
-                                                <template #icon>
-                                                    <plus-outlined />
-                                                </template>
-                                                Add RBS
-                                            </a-button>
-                                        </a-space>
-                                    </template>
-                                </a-select>
-                                <a-select v-model:value="formState.cds" placeholder="Select coding sequence..."
-                                    style="width: 300px" :options="items.map(item => ({ value: item }))">
-                                    <template #dropdownRender="{ menuNode: menu }">
-                                        <v-nodes :vnodes="menu" />
-                                        <a-divider style="margin: 4px 0" />
-                                        <a-space style="padding: 4px 8px">
-                                            <a-input ref="inputRef" v-model:value="name"
-                                                placeholder="Enter coding sequence..." />
-                                            <a-button type="text" @click="addItem">
-                                                <template #icon>
-                                                    <plus-outlined />
-                                                </template>
-                                                Add CDS
-                                            </a-button>
-                                        </a-space>
-                                    </template>
-                                </a-select>
-                                <a-button slot="suffix" type="primary" html-type="submit">
-                                    Calculate
-                                </a-button>
-                            </a-form-item>
+                            <a-space v-for="(basicPart, index) in formState.basicParts" :key="basicPart.id"
+                                style="display: flex; margin-bottom: 8px">
+                                <a-form-item :name="['basic', index, 'type']" label="Basic part type:" :rules="{
+                                    required: true,
+                                    message: 'Missing part type',
+                                }">
+                                    <a-select v-model:value="basicPart.type" placeholder="Select part type..."
+                                        :options="basicPartTypes.map(a => ({ value: a }))"
+                                        style="width: 130px"></a-select>
+                                </a-form-item>
+                                <a-form-item :name="['basic', index, 'info']" label="Part information:"
+                                    :rules="[{ required: true, message: 'Missing part information' }]">
+                                    <a-select v-model:value="basicPart.info" placeholder="Select promoter..."
+                                        style="width: 200px" :disabled="!basicPart.type"
+                                        :options="allBasicParts[basicPart.type].map(item => ({ value: item }))">
+                                        <template #dropdownRender="{ menuNode: menu }">
+                                            <v-nodes :vnodes="menu" />
+                                            <a-divider style="margin: 4px 0" />
+                                            <a-space style="padding: 4px 8px">
+                                                <a-input ref="inputRef" v-model:value="name"
+                                                    placeholder="Enter part name..." />
+                                                <a-input ref="inputRef" v-model:value="seq"
+                                                    placeholder="Enter part sequence..." />
+                                                <a-button type="text" @click="addItem">
+                                                    <PlusOutlined />
+                                                    Add promoter
+                                                </a-button>
+                                            </a-space>
+                                        </template>
+                                    </a-select>
+                                    <MinusCircleOutlined @click="removeSight(sight)" />
+                                </a-form-item>
+                            </a-space>
+                            <a-button slot="suffix" type="primary" html-type="submit">
+                                Calculate
+                            </a-button>
                         </a-form>
                     </div>
                 </div>
@@ -76,15 +56,24 @@
 </template>
 <script>
 import headermenu from "@/components/headermenu.vue";
+import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons-vue";
 import { reactive } from 'vue';
 const formState = reactive({
     prom: '',
     rbs: '',
     cds: '',
 });
+const allBasicParts = {
+    promoter: ['P1', 'P2', 'P3'],
+    RBS: ['RBS1', 'RBS2', 'RBS3'],
+    CDS: ['CDS1', 'CDS2', 'CDS3'],
+};
+const basicPartTypes = ['promoter', 'RBS', 'CDS'];
 export default {
     components: {
-        headermenu
+        headermenu,
+        MinusCircleOutlined,
+        PlusOutlined,
     },
     data() {
         return {
