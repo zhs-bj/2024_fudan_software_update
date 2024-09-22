@@ -20,9 +20,10 @@ dist
 template
 static
 similarity/data
+!similarity/data/seqdump.fasta
 similarity/kmer2vec
-similarity/upload_similarity.py
 blast+
 *.tar.gz
 old_collections
 *.ipynb
+debug_webui.sh

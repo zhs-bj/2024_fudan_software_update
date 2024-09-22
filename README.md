@@ -11,3 +11,7 @@ v0.0.1: Successfully merged to main.
 # Note on 2024.9.19
 
 Added similarity comparison calculation & visualization of parthub.
+
+# Note on 2024.9.21
+
+Added burden UI, enabled selection of commonly used basic parts and search for parts in parthub database, i.e. the registry.

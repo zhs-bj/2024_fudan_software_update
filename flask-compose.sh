@@ -8,5 +8,6 @@ else
     tar -zxvf ncbi-blast-2.16.0+-x64-linux.tar.gz
     mv ncbi-blast-2.16.0+ blast+
     ./blast+/bin/makeblastdb -in similarity/data/seqdump.fasta -dbtype nucl
+    mkdir /app/uploads
     python app.py --host=0.0.0.0
 fi

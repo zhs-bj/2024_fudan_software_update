@@ -180,9 +180,9 @@ def get_part_id(name: str) -> str:
     :return: part id in neo4j database
     """
     query = """
-        MATCH (p:Part {number: 'part_id'})
-        RETURN ID(p);
-        """
+    MATCH (p:Part {number: 'part_id'})
+    RETURN ID(p);
+    """
     query = re.sub('part_id', name, query)
     part_id = str(graph.run(query).evaluate())
     return part_id

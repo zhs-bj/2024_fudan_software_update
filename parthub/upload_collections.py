@@ -48,7 +48,7 @@ def get_node_color(time: str, is_basic: bool):
 
 
 part_node_dict = {}
-for yr in range(2004, 2024):
+for yr in range(2021, 2024): # TO BE MODIFIED (2024)
     print(f'Uploading {yr}...', flush=True)
     data = pd.read_csv(f'./parthub/collections/{yr}collection.csv')
     part_list = []
@@ -93,7 +93,7 @@ for yr in range(2004, 2024):
             part_using_list = []
             part_twins_list = []
             part_using_deep_list = []
-        part_is_basic = (len(part_using_list) == 0)
+        part_is_basic = (len(part_using_deep_list) == 0)
         part_node = Node('Part', number=str(part_num), name=part_name, url=part_url, description=part_desc, type=part_type,
                         team=part_team, sequence=part_sequence, contents=part_contents, released=part_released,
                         sample=part_sample, assemble=part_assemble, length=part_len, date=part_date,

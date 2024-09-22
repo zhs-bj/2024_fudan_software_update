@@ -3,15 +3,20 @@ import os.path
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_compress import Compress
 from os import path
+from werkzeug.utils import secure_filename
 
 import config
 from parthub.utils import parthub_search, create_parthub_seq_file, get_part_id
 from similarity.utils import query_similarity
+from burden.utils import read_basic_part_csv, parse_gb_file
 
+UPLOAD_FOLDER = '/app/uploads'
+ALLOWED_EXTENSIONS = {'gb'}
 parthub_config = config.parthub_config
 template_folder = path.abspath('webUI/template')
 static_folder = path.abspath('webUI/static')
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder, static_url_path='')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 Compress(app)
 
 
@@ -44,10 +49,28 @@ def treeMap():
 
 
 # for apis
-@app.route('/api/burden', methods=['POST'])
-def handle_burden_query():
-    data = request.json
-    return None
+@app.route('/api/burden/get_basic_part_info', methods=['GET'])
+def handle_get_basic_part_info():
+    return read_basic_part_csv()
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/api/burden/upload_genbank_file', methods=['POST'])
+# handle uploaded file in genbank format using Biopython
+def handle_upload_genbank_file():
+    if 'file' not in request.files:
+        app.logger.warning('Missing file')
+        return jsonify({"message": "Missing file"}), 400
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify(parse_gb_file(filename)), 200
+    else:
+        app.logger.warning('Invalid file type')
+        return jsonify({"message": "Invalid file type"}), 400
 
 @app.route('/api/parthub/search', methods=['POST'])
 def handle_parthub_search():
@@ -80,12 +103,6 @@ def handle_query_similarity():
     if res is None:
         return jsonify({"message": "Similarity query failed"}), 500
     return jsonify({"result": res}), 200
-
-
-# @app.route('/api/test/connection')
-# def handle_test_connection():
-#     return test_connection()
-
 
 
 # for file download
