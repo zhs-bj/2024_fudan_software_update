@@ -20,6 +20,8 @@
               @finishFailed="onFinishFailed(formState)"
             >
               <a-form-item
+                mode="horizontal"
+                style="margin-top: 2vh"
                 :rules="[
                   { required: true, message: 'Please input your query!' },
                 ]"

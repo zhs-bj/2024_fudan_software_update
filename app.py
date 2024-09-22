@@ -7,11 +7,11 @@ from werkzeug.utils import secure_filename
 
 import config
 from parthub.utils import parthub_search, create_parthub_seq_file, get_part_id
-from similarity.utils import query_similarity
-from burden.utils import read_basic_part_csv, parse_gb_file
+from similarity.utils import query_similarity, parse_part_file
+from burden.utils import read_basic_part_csv, get_basic_parts, calc_burden
 
 UPLOAD_FOLDER = '/app/uploads'
-ALLOWED_EXTENSIONS = {'gb'}
+ALLOWED_EXTENSIONS = {'gb', 'fasta'}
 parthub_config = config.parthub_config
 template_folder = path.abspath('webUI/template')
 static_folder = path.abspath('webUI/static')
@@ -53,13 +53,31 @@ def treeMap():
 def handle_get_basic_part_info():
     return read_basic_part_csv()
 
+
+@app.route('/api/burden/get_basic_parts', methods=['POST'])
+def handle_get_basic_parts():
+    data = request.json
+    if not data or not data.get('number'):
+        app.logger.warning('Missing data')
+        return jsonify({"message": "Missing data"}), 400
+    part_num = data.get('number')
+    return get_basic_parts(part_num)
+
+@app.route('/api/burden/calculate', methods=['POST'])
+def handle_calc_burden():
+    data = request.json
+    if not data:
+        app.logger.warning('Missing data')
+        return jsonify({"message": "Missing data"}), 400
+    return jsonify({"result": calc_burden(data)}), 200
+    
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/api/burden/upload_genbank_file', methods=['POST'])
-# handle uploaded file in genbank format using Biopython
-def handle_upload_genbank_file():
+@app.route('/api/parthub/upload_part_file', methods=['POST'])
+# handle uploaded file in genbank or fasta format using Biopython
+def handle_upload_part_file():
     if 'file' not in request.files:
         app.logger.warning('Missing file')
         return jsonify({"message": "Missing file"}), 400
@@ -67,7 +85,7 @@ def handle_upload_genbank_file():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return jsonify(parse_gb_file(filename)), 200
+        return parse_part_file(filename)
     else:
         app.logger.warning('Invalid file type')
         return jsonify({"message": "Invalid file type"}), 400

@@ -3,6 +3,10 @@ import pandas as pd
 import os
 import re
 from py2neo import Node, Graph, NodeMatcher
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from flask import jsonify
 
 graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j")
 node_matcher = NodeMatcher(graph)
@@ -96,3 +100,13 @@ def query_similarity(curPart: str):
         """
         graph.run(query)
     return results
+
+def parse_part_file(filename: str):
+    file_format = filename.rsplit('.', 1)[1].lower()
+    try:
+        records = list(SeqIO.parse(filename, file_format))
+        record = records[0]
+        seq = str(record.seq)
+        category = record.description.split(' ')[1]
+    except:
+        return jsonify({"message": "File parse error. Please check the file format."}), 400

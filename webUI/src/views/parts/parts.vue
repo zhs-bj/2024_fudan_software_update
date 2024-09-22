@@ -18,6 +18,7 @@
             style="
               text-align: center;
               height: 100%;
+              margin-top: 2vh;
               padding-bottom: 1.5rem;
               display: inline-flex;
               align-items: center;
@@ -30,6 +31,7 @@
               @finishFailed="onFinishFailed(formState)"
             >
               <a-form-item
+                mode="horizontal"
                 :rules="{
                   initialValue: searchQuery,
                   rules: [

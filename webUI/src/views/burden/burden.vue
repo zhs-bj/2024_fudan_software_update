@@ -17,8 +17,8 @@
             <div style="display: inline-block; height: 100%; width: 50vw">
               <a-form
                 :model="formState"
-                @finish="onFinish(formState)"
-                @finishFailed="onFinishFailed(formState)"
+                @finish="onFinish(formState.parts)"
+                @finishFailed="onFinishFailed(formState.parts)"
               >
                 <a-form-item style="margin-top: 24px">
                   <a-cascader
@@ -91,33 +91,24 @@ if (!regex.test(values.query)) {
                 
                 -->
                 </a-form-item>
-                <a-form-item
-                  style="display: flex; justify-content: space-around"
-                >
+                <a-form-item mode="horizontal">
                   <a-button
                     type="dashed"
-                    block
                     :disabled="!value"
-                    style="width: 60%"
                     @click="addPart"
+                    style="width: 45%; margin-right: 2vw"
                   >
                     <PlusOutlined />
                     Add basic part
                   </a-button>
-                  <p style="margin: 0 2vw">Or</p>
-                  <a-select
-                    v-model:value="valueSearch"
-                    show-search
-                    placeholder="Search parts in registry"
-                    style="width: 20vw"
-                    :default-active-first-option="false"
-                    :show-arrow="false"
-                    :filter-option="false"
-                    :not-found-content="null"
-                    :options="registryParts"
-                    @search="handleSearch"
-                    @change="handleChange"
-                  ></a-select>
+                  <a-button
+                    type="dashed"
+                    @click="toParthub()"
+                    style="width: 45%"
+                  >
+                    <SearchOutlined />
+                    Search in PartHub
+                  </a-button>
                 </a-form-item>
                 <a-form-item style="max-height: 45vh; overflow-y: auto">
                   <a-space
@@ -125,13 +116,39 @@ if (!regex.test(values.query)) {
                     :key="basicPart.id"
                     style="display: flex; margin-bottom: 8px"
                   >
-                    <p>{{ basicPart.type }} - {{ basicPart.info.name }}</p>
+                    <a-tooltip placement="right">
+                      <template #title>
+                        <b>Name:</b>&nbsp;{{
+                          basicPart.info.name.length > 30
+                            ? basicPart.info.name.slice(0, 27) + "..."
+                            : basicPart.info.name
+                        }}<br />
+                        <b>Sequence:</b>&nbsp;{{
+                          basicPart.info.seq.length > 30
+                            ? basicPart.info.seq.slice(0, 21) +
+                              "..." +
+                              basicPart.info.seq.slice(-6)
+                            : basicPart.info.seq
+                        }}
+                      </template>
+                      <a-tag :color="tagColor[basicPart.type]"
+                        >{{ basicPart.type }} - {{ basicPart.info.name }}
+                      </a-tag>
+                    </a-tooltip>
                     <MinusCircleOutlined @click="removePart(basicPart)" />
                   </a-space>
                 </a-form-item>
-                <a-form-item>
-                  <a-button type="primary" html-type="submit">
+                <a-form-item> </a-form-item>
+                <a-form-item mode="horizontal">
+                  <a-button
+                    type="primary"
+                    html-type="submit"
+                    style="margin-right: 2vw"
+                  >
                     Calculate
+                  </a-button>
+                  <a-button type="default" @click="clearAllParts()">
+                    Clear all parts
                   </a-button>
                 </a-form-item>
               </a-form>
@@ -159,7 +176,11 @@ if (!regex.test(values.query)) {
 </template>
 <script>
 import headermenu from "@/components/headermenu.vue";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons-vue";
+import {
+  MinusCircleOutlined,
+  PlusOutlined,
+  SearchOutlined,
+} from "@ant-design/icons-vue";
 import { reactive } from "vue";
 import axios from "axios";
 
@@ -168,7 +189,7 @@ export default {
     headermenu,
     MinusCircleOutlined,
     PlusOutlined,
-    UploadOutlined,
+    SearchOutlined,
   },
   data() {
     return {
@@ -178,8 +199,11 @@ export default {
       allBasicPartInfo: null,
       name: "",
       seq: "",
-      registryParts: [],
-      valueSearch: null,
+      tagColor: {
+        promoter: "blue",
+        RBS: "orange",
+        CDS: "green",
+      },
     };
   },
   beforeCreate() {
@@ -194,30 +218,59 @@ export default {
             value: partType,
             children: res[partType].map((part) => ({
               label: part.name,
-              value: { name: part.name, seq: part.seq },
+              value: { name: part.name, seq: part.seq.toUpperCase() },
             })),
           });
         }
-        console.log(this.allBasicPartInfo);
       })
       .catch((error) => {
         console.log(error);
       });
   },
+  created() {
+    this.formState.parts = localStorage.getItem("burdenParts");
+    if (!this.formState.parts || this.formState.parts == "null") {
+      this.formState.parts = [];
+    } else {
+      this.formState.parts = JSON.parse(this.formState.parts);
+    }
+    console.log(this.formState.parts);
+  },
   methods: {
     onFinish(values) {
+      values = JSON.parse(JSON.stringify(values));
       console.log(values);
+      var parts_structure = values.map((item) => item.type[0].toUpperCase());
+      const regex = /^P(RC)+$/;
+      if (!regex.test(parts_structure)) {
+        this.$message.warning(
+          "Invalid part structure. The part should begin with a promoter, followed by one or more RBS sequences, each of which is then followed by a CDS."
+        );
+      }
+      axios
+        .post("/api/burden/calculate", values)
+        .then((response) => {
+          console.log(response.data);
+          this.$message.success("Burden calculation completed!");
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$message.error("Burden calculation failed!");
+        });
     },
     onFinishFailed(errorInfo) {
       console.log(errorInfo);
     },
     addItem(part_type) {
-      console.log(this.allBasicPartInfo);
-      console.log([this.name, this.seq]);
-      this.allBasicPartInfo[part_type].push({
-        name: this.name,
-        seq: [this.name, this.seq],
-      });
+      for (var i in this.allBasicPartInfo) {
+        if (this.allBasicPartInfo[i].value == part_type) {
+          this.allBasicPartInfo[i].children.push({
+            label: this.name,
+            value: { name: this.name, seq: this.seq.toUpperCase() },
+          });
+          break;
+        }
+      }
       this.name = "";
       this.seq = "";
     },
@@ -226,20 +279,28 @@ export default {
       if (index !== -1) {
         this.formState.parts.splice(index, 1);
       }
+      localStorage.setItem("burdenParts", JSON.stringify(this.formState.parts));
     },
     addPart() {
-      console.log(this.value);
       this.formState.parts.push({
         type: this.value[0],
         info: JSON.parse(JSON.stringify(this.value[1])),
         id: Date.now(),
       });
+      localStorage.setItem("burdenParts", JSON.stringify(this.formState.parts));
+    },
+    clearAllParts() {
+      this.formState.parts = [];
+      localStorage.setItem("burdenParts", JSON.stringify(this.formState.parts));
     },
     filter(inputValue, path) {
       return path.some(
         (option) =>
           option.label.toLowerCase().indexOf(inputValue.toLowerCase()) > -1
       );
+    },
+    toParthub() {
+      window.location.href = "/parthub";
     },
   },
 };
