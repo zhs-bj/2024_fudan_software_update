@@ -13,8 +13,16 @@
             alignItems: 'center',
           }"
         >
-          <div style="text-align: center; height: 85vh; width: 80vw">
-            <div style="display: inline-block; height: 100%; width: 50vw">
+          <div
+            style="
+              text-align: center;
+              height: 85vh;
+              width: 80vw;
+              display: flex;
+              flex-direction: row;
+            "
+          >
+            <div style="height: 100%; width: 50vw">
               <a-form
                 :model="formState"
                 @finish="onFinish(formState.parts)"
@@ -120,7 +128,7 @@ if (!regex.test(values.query)) {
                     Search in PartHub
                   </a-button>
                 </a-form-item>
-                <a-form-item style="max-height: 45vh; overflow-y: auto">
+                <a-form-item style="height: 45vh; overflow-y: auto">
                   <a-space
                     v-for="basicPart in formState.parts"
                     :key="basicPart.id"
@@ -154,19 +162,32 @@ if (!regex.test(values.query)) {
                     <DownCircleOutlined @click="moveDownPart(basicPart)" />
                   </a-space>
                 </a-form-item>
-                <a-form-item> </a-form-item>
                 <a-form-item mode="horizontal">
-                  <a-input
-                    v-model:value="formState.copy_number"
-                    placeholder="Enter copy number"
-                    overlay-class-name="numeric-input"
-                    style="width: 40%; margin-right: 2vw"
-                    :rules="[
-                      { required: true, message: 'Missing copy number' },
-                    ]"
-                    @change="changeCopyNumber"
-                  >
-                  </a-input>
+                  <a-tooltip placement="bottomLeft">
+                    <template #title>
+                      <b
+                        >Some average copy numbers for low, medium, and high
+                        copy number plasmids:</b
+                      >
+                      <br />
+                      <b>Low:</b>&nbsp;15-20 copies<br />
+                      <b>Medium:</b>&nbsp;20-100 copies<br />
+                      <b>High:</b>&nbsp;500-700 copies<br />
+                      <b>pSB1C3, pSB1A2:</b>&nbsp;100-300 copies<br />
+                    </template>
+                    <a-input
+                      v-model:value="formState.copy_number"
+                      placeholder="Enter copy number"
+                      overlay-class-name="numeric-input"
+                      addon-before="Copy number:"
+                      style="width: 40%; margin-right: 2vw"
+                      :rules="[
+                        { required: true, message: 'Missing copy number' },
+                      ]"
+                      @change="changeCopyNumber"
+                    >
+                    </a-input>
+                  </a-tooltip>
                   <a-button
                     type="primary"
                     html-type="submit"
@@ -182,7 +203,10 @@ if (!regex.test(values.query)) {
             </div>
             <div
               style="
-                display: inline-block;
+                display: flex;
+                flex-direction: column;
+                flex-wrap: wrap;
+                justify-content: center;
                 height: 100%;
                 width: 25vw;
                 margin-left: 24px;
@@ -192,12 +216,14 @@ if (!regex.test(values.query)) {
               <p
                 :style="{
                   fontSize: '36px',
-                  marginBottom: '12px',
+                  marginBottom: '50px',
                   color: burdenValue
                     ? burdenValue <= 0.1
                       ? 'green'
                       : burdenValue <= 0.2
-                      ? 'orange'
+                      ? '#ffdc54'
+                      : burdenValue <= 0.4
+                      ? '#ffa44b'
                       : 'red'
                     : 'lightgray',
                   fontWeight: burdenValue && burdenValue > 0.2 ? 'bold' : '',
@@ -207,6 +233,19 @@ if (!regex.test(values.query)) {
                   burdenValue
                     ? (burdenValue * 100).toFixed(4) + "%"
                     : "Not calculated yet"
+                }}
+              </p>
+              <p style="font-size: 16px; color: #707070; text-align: justify">
+                {{
+                  burdenValue
+                    ? burdenValue <= 0.1
+                      ? "These BioBricks are generally well-tolerated by the host cells, with minimal impact on growth and stability. They are suitable for most applications and have a low risk of mutational inactivation."
+                      : burdenValue <= 0.2
+                      ? "These BioBricks can moderately affect cell growth and may show some instability over time. Users should monitor for potential mutations, especially in larger cultures or over multiple cell divisions."
+                      : burdenValue <= 0.4
+                      ? "These BioBricks significantly impact cell growth and are at a higher risk of mutational inactivation. Careful monitoring and frequent re-cloning are recommended to maintain functionality."
+                      : "These BioBricks are highly burdensome and are likely to mutate rapidly, making them unclonable and unsuitable for most applications. Avoid using these unless absolutely necessary and with strict controls."
+                    : ""
                 }}
               </p>
             </div>

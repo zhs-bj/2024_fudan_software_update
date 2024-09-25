@@ -13,4 +13,4 @@ K_prom = 3.229389306029437
 B_prom = 3428.628874021221
 K_rbs = 0.21170254
 b_rbs = 0.24290994
-beta_copy_number = 24
+beta_copy_number = 200

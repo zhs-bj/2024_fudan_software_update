@@ -121,8 +121,8 @@ function createEdgeTable(info, startNode, endNode) {
   if (info.type == "similar") {
     var scores = info.properties;
     dateobj.innerText = "Sequence similarity: " + scores.seq_score.toFixed(2);
-    teamobj.innerText = "Category similarity: " + scores.cat_scoretoFixed(2);
-    dsnobj.innerText = "Overall similarity: " + scores.overall_scoretoFixed(2);
+    teamobj.innerText = "Category similarity: " + scores.cat_score.toFixed(2);
+    dsnobj.innerText = "Overall similarity: " + scores.overall_score.toFixed(2);
   } else {
     dateobj.innerText = "";
     teamobj.innerText = "";
