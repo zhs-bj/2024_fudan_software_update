@@ -11,6 +11,7 @@
       mode="horizontal"
       :style="{ lineHeight: '64px' }"
     >
+      <a-menu-item key="0" style="font-size: 25px"> PartHub 3.0 </a-menu-item>
       <a-menu-item key="1" @click="toHome()">
         <HomeFilled />&nbsp;Home
       </a-menu-item>

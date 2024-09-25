@@ -38,7 +38,10 @@
                 ]"
               >
                 Search parts by:
-                <a-radio-group v-model:value="formState.type">
+                <a-radio-group
+                  v-model:value="formState.type"
+                  :default-value="searchType"
+                >
                   <a-radio-button value="number"> ID </a-radio-button>
                   <a-radio-button value="name"> Name </a-radio-button>
                   <a-radio-button value="sequence"> Sequence </a-radio-button>
@@ -54,7 +57,7 @@
       <a-layout-footer
         style="text-align: center; padding-top: 12px; padding-bottom: 12px"
       >
-        xxx ©2024 Created by Hongcheng Chen
+        PartHub 3.0 ©2024 Created by Hongcheng Chen
       </a-layout-footer>
     </a-layout>
   </a-layout>
@@ -73,6 +76,7 @@ export default {
   },
   data() {
     return {
+      searchType: "id",
       formState,
       defaultActivate: ["3"],
     };

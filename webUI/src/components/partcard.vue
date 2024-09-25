@@ -83,8 +83,8 @@ export default {
           }
           const regex = /^[ATCGU]+$/;
           for (var i in data) {
-            data[i]["seq"] = data[i]["seq"].toUpperCase();
-            if (!regex.test(data[i]["Seq"])) {
+            data[i]["info"]["seq"] = data[i]["info"]["seq"].toUpperCase();
+            if (!regex.test(data[i]["info"]["seq"])) {
               this.$message.warning("Invalid part sequence");
               return;
             }

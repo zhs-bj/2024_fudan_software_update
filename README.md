@@ -15,3 +15,7 @@ Added similarity comparison calculation & visualization of parthub.
 # Note on 2024.9.21
 
 Added burden UI, enabled selection of commonly used basic parts and search for parts in parthub database, i.e. the registry.
+
+# Note on 2024.9.23
+
+Added burden calculation, and users can now select parts from PartHub database (i.e. the iGEM registry).

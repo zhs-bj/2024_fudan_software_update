@@ -86,7 +86,7 @@
       <a-layout-footer
         style="text-align: center; padding-top: 12px; padding-bottom: 12px"
       >
-        xxx ©2024 Created by Hongchen Chen
+        PartHub 3.0 ©2024 Created by Hongchen Chen
       </a-layout-footer>
     </a-layout>
   </a-layout>

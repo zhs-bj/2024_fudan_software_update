@@ -13,32 +13,20 @@ node_matcher = NodeMatcher(graph)
 
 BASE = 1.5
 
-def calc_cat_score(category: str):
-    score = 0
-    for cat in category.split(' '):
-        if not cat:
-            continue
-        labels = cat.split('/')[2:]
-        score += (BASE ** len(labels) - 1) / (BASE - 1)
-    return score
-
 def calc_common_cat_score(category1: str, category2: str):
     com_score = 0
     for cat in category2.split(' '):
         labels = cat.split('/')[2:]
         label = '/'
         weight = 1
-        for i, l in enumerate(labels):
+        for l in labels:
             label += '/' + l
             if label in category1:
                 com_score += weight
                 weight *= BASE
             else:
                 break
-    mx_score = np.maximum(calc_cat_score(category1), calc_cat_score(category2))
-    if mx_score == 0:
-        return 0
-    return com_score / mx_score
+    return com_score
 
 def query_similarity(curPart: str):
     curNode = node_matcher.match("Part", number=curPart).first()
@@ -52,7 +40,7 @@ def query_similarity(curPart: str):
     # Run BLAST
     cmd = "./blast+/bin/blastn -query ./similarity/data/temp_query.fasta " \
               "-db ./similarity/data/seqdump.fasta " \
-              "-out ./similarity/data/query_ans.txt -evalue 1e-3 -outfmt 6"
+              "-out ./similarity/data/query_ans.txt -evalue 1e-5 -outfmt 6"
     if len(curSeq) <= 32:
         cmd += " -task blastn-short"
     status = os.system(cmd)
@@ -74,22 +62,29 @@ def query_similarity(curPart: str):
     parts = parts - set([i['m.number'] for i in parts_using + parts_used + parts_twins] + [curPart])
 
     # Calculate the similarity score
+    try:
+        max_bs = float(df[(df.iloc[:, 1] == curPart) & (df.iloc[:, 3] == len(curSeq))].iloc[0, 11])
+    except:
+        return None
     results = []
     for part in parts:
         matchedNode = node_matcher.match("Part", number=part).first()
         if matchedNode is None:
             continue
         res_dict = {"part": part, "seq_score": 0.0, 'cat_score': 0.0}
-        max_len = np.maximum(len(curSeq), len(matchedNode["sequence"]))
         for i in df[df.iloc[:, 1] == part].index:
-            res_dict["seq_score"] = np.maximum(res_dict["seq_score"], float(df.iloc[i, 2]) / 100 * 0.7 + float(df.iloc[i, 3]) / max_len * 0.3)
+            identity = float(df.iloc[i, 2])
+            bit_score = float(df.iloc[i, 11])
+            res_dict["seq_score"] = np.maximum(res_dict["seq_score"],
+                                    bit_score / max_bs * 70 + identity / 100 * 30)
         matchedCat = matchedNode["category"]
         res_dict["cat_score"] = calc_common_cat_score(curCat, matchedCat)
-        res_dict["overall_score"] = 0.8 * res_dict["seq_score"] + 0.2 * res_dict["cat_score"]
+        res_dict["overall_score"] = np.minimum(res_dict["seq_score"] + res_dict["cat_score"], 100)
         results.append(res_dict)
     results.sort(key=lambda x: x["overall_score"], reverse=True)
-    results = results[:30]
-    for part_info in results:
+    results = results[:100]
+    results_add_to_graph = results[:30]
+    for part_info in results_add_to_graph:
         part = part_info["part"]
         (part1, part2) = (curPart, part) if curPart < part else (part, curPart)
         query = """

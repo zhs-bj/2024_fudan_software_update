@@ -2,11 +2,20 @@
   <a-layout id="app" style="min-height: 100vh">
     <a-layout>
       <headermenu :default-activate="defaultActivate"></headermenu>
-      <a-layout-content style="padding: 0 50px;">
-        <div :style="{ background: '#fff', padding: '24px', marginTop: '40px', minHeight: '280px' }">Content</div>
+      <a-layout-content style="padding: 0 50px">
+        <div
+          :style="{
+            background: '#fff',
+            padding: '24px',
+            marginTop: '40px',
+            minHeight: '280px',
+          }"
+        >
+          Content
+        </div>
       </a-layout-content>
       <a-layout-footer style="text-align: center">
-        xxx ©2024 Created by Hongcheng Chen
+        PartHub 3.0 ©2024 Created by Hongcheng Chen
       </a-layout-footer>
     </a-layout>
   </a-layout>
@@ -16,14 +25,14 @@
 import headermenu from "@/components/headermenu.vue";
 export default {
   components: {
-    headermenu
+    headermenu,
   },
   data() {
     return {
-      defaultActivate: ['1'],
+      defaultActivate: ["1"],
     };
   },
-}
+};
 </script>
 
 <style scoped>
@@ -53,7 +62,7 @@ export default {
   margin: 16px 0 16px 24px;
 }
 
-[data-theme='dark'] .site-layout-content {
+[data-theme="dark"] .site-layout-content {
   background: #141414;
 }
 

@@ -3,33 +3,29 @@
 # -*- coding:utf-8 -*-
 @File : burden_calculator.py
 @Author : Hongcheng Chen
-
-Reference:
-1. Weiße, A. Y., Oyarzún, D. A., Danos, V., & Swain, P. S. (2015).
-   Mechanistic links between cellular trade-offs, gene expression, and growth.
-   Proceedings of the National Academy of Sciences, 112(9), E1038-E1047.
-2. Nikolados, E.-M., Weiße, A. Y., Ceroni, F., & Oyarzún, D. A. (2019).
-   Growth Defects and Loss-of-Function in Synthetic Gene Circuits.
-   ACS Synthetic Biology, 8(6), 1231-1240.
 """
+# Reference:
+# 1. Weiße, A. Y., Oyarzún, D. A., Danos, V., & Swain, P. S. (2015).
+#    Mechanistic links between cellular trade-offs, gene expression, and growth.
+#    Proceedings of the National Academy of Sciences, 112(9), E1038-E1047.
+# 2. Nikolados, E.-M., Weiße, A. Y., Ceroni, F., & Oyarzún, D. A. (2019).
+#    Growth Defects and Loss-of-Function in Synthetic Gene Circuits.
+#    ACS Synthetic Biology, 8(6), 1231-1240.
 
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy.integrate import solve_ivp
-from cellmodel import cellmodel_odes
-from sklearn.metrics import mean_squared_error
+from burden.cellmodel import cellmodel_odes
 
-# constant parameters
-growth0 = 20246867.33991941
-beta_prom = 35.75
-beta_rbs = 15.6851227
-K_rbs = 0.21170254
-b_rbs = 0.24290994
+from burden.config import *
 
-def BurdenCalculator(copy_number: float,prom_strength: float, tl_units: list[tuple[float, str]]):
-    rbsH = [tl_units[i][0] for i in range(len(tl_units))] * beta_rbs
+def burden_calculator(copy_number: float, prom_strength: float, tl_units: list[tuple[float, int, str]]):
+    rbs_strengths = np.array([tl_units[i][0] for i in range(len(tl_units))])
+    len_aa = np.array([tl_units[i][1] for i in range(len(tl_units))])
+    cds_seqs = np.array([tl_units[i][2] for i in range(len(tl_units))])
     # parameters
+    # - endogeneous
     thetar = 426.8693338968694
     s0 = 1.0e4
     gmax = 1260.0
@@ -45,25 +41,29 @@ def BurdenCalculator(copy_number: float,prom_strength: float, tl_units: list[tup
     vt = 726.0
     wr = 929.9678874564831
     wq = 948.9349882947897
-    wic = copy_number * prom_strength / beta_prom  # 500
     nq = 4
     nr = 7459.0
     ns = 0.5
-    nic = 233 # BFP # GFP:238
-    thetaic = 4.38
-    Ric = 1  # 0.8
-    gmaxic = 1260 * rbsH  # 1260.0
+    # - heterologous
+    wic = (copy_number / beta_copy_number) * (prom_strength / beta_prom)
+    rbsH = rbs_strengths * beta_rbs
+    nic = len_aa # BFP (GFP:238)
+    thetaic = 4.38 * np.ones(len(rbsH))
+    Ric = np.ones(len(rbsH))
+    gmaxic = 1260 * np.ones(len(rbsH))
     parameters = (thetar, s0, gmax, thetax, Kt, M, we, Km, vm, nx, Kq, Kg, vt, wr, wq, wic, nq, nr, ns, nic, thetaic, Ric, gmaxic)
 
     # define rate constants
+    # - endogeneous
     b = 0
     dm = 0.1
     kb = 0.0095
     ku = 1.0
-    kbic = 1e-2*rbsH
-    kuic = 1e-2/rbsH
-    dmic = np.log(2) / 2
-    dpic = np.log(2) / 4
+    # - heterologous
+    kbic = 1e-2 * rbsH
+    kuic = 1e-2 * np.ones(len(rbsH))
+    dmic = np.log(2) / 2 * np.ones(len(rbsH))
+    dpic = np.log(2) / 4 * np.ones(len(rbsH))
     rates = (b, dm, kb, ku, kbic, kuic, dmic, dpic)
 
     # define initial conditions
@@ -79,12 +79,12 @@ def BurdenCalculator(copy_number: float,prom_strength: float, tl_units: list[tup
     si_0 = 0
     mq_0 = 0
     mr_0 = 0
-    mic_0 = 0
-    rmic_0 = 0
-    pic_0 = 0
     r_0 = 10.0
     a_0 = 1000.0
     lam_0 = 0
+    mic_0 = 0
+    rmic_0 = 0
+    pic_0 = 0
     init = (rmr_0, em_0, rmq_0, rmt_0, et_0, rmm_0, mt_0, mm_0, q_0, si_0, mq_0, mr_0, mic_0, rmic_0, pic_0, r_0, a_0, lam_0)
 
     # call solver routine 
@@ -112,4 +112,4 @@ def BurdenCalculator(copy_number: float,prom_strength: float, tl_units: list[tup
     r = y[15]
     a = y[16]
     lam = y[17]
-    return 1-lam[-1]/growth0
+    return 1 - lam[-1] / growth_WT

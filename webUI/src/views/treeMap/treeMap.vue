@@ -63,7 +63,7 @@
       <a-layout-footer
         style="text-align: center; padding-top: 12px; padding-bottom: 12px"
       >
-        xxx ©2024 Created by Hongchen Chen
+        PartHub 3.0 ©2024 Created by Hongchen Chen
       </a-layout-footer>
     </a-layout>
   </a-layout>
@@ -120,12 +120,9 @@ function createEdgeTable(info, startNode, endNode) {
   var dsnobj = document.getElementById("designer");
   if (info.type == "similar") {
     var scores = info.properties;
-    dateobj.innerText =
-      "Sequence similarity: " + (scores.seq_score * 100).toFixed(2) + "%";
-    teamobj.innerText =
-      "Category similarity: " + (scores.cat_score * 100).toFixed(2) + "%";
-    dsnobj.innerText =
-      "Overall similarity: " + (scores.overall_score * 100).toFixed(2) + "%";
+    dateobj.innerText = "Sequence similarity: " + scores.seq_score.toFixed(2);
+    teamobj.innerText = "Category similarity: " + scores.cat_scoretoFixed(2);
+    dsnobj.innerText = "Overall similarity: " + scores.overall_scoretoFixed(2);
   } else {
     dateobj.innerText = "";
     teamobj.innerText = "";
@@ -164,7 +161,7 @@ export default {
       loading: true,
       node: null,
       similarNodes: null,
-      neovis_selected_edge: false,
+      similarNodes_graph: null,
     };
   },
   mounted() {
@@ -178,8 +175,9 @@ export default {
         })
         .then((response) => {
           this.similarNodes = response.data.result.map((item) => item.part);
-          this.similarNodes.push(this.curPart);
-          this.similarNodes = JSON.stringify(this.similarNodes);
+          this.similarNodes_graph = this.similarNodes.slice(0, 30);
+          this.similarNodes_graph.push(this.curPart);
+          this.similarNodes_graph = JSON.stringify(this.similarNodes_graph);
           this.draw();
         })
         .catch((error) => {
@@ -269,9 +267,9 @@ export default {
               },
             },
             initialCypher:
-              `MATCH (n)<-[r:\`refers to\`|twins]-{1,3}(m) WHERE n.number IN ${this.similarNodes} RETURN n,r,m LIMIT 120 ` +
-              `UNION MATCH (n)-[r:\`refers to\`|twins]->{1,3}(m) WHERE n.number IN ${this.similarNodes} RETURN n,r,m LIMIT 120 ` +
-              `UNION MATCH (n:Part{number:'${this.curPart}'})-[r:similar]-(m) WHERE n.number IN ${this.similarNodes} RETURN n,r,m LIMIT 50`,
+              `MATCH (n)<-[r:\`refers to\`|twins]-{1,3}(m) WHERE n.number IN ${this.similarNodes_graph} RETURN n,r,m LIMIT 120 ` +
+              `UNION MATCH (n)-[r:\`refers to\`|twins]->{1,3}(m) WHERE n.number IN ${this.similarNodes_graph} RETURN n,r,m LIMIT 120 ` +
+              `UNION MATCH (n:Part{number:'${this.curPart}'})-[r:similar]-(m) WHERE n.number IN ${this.similarNodes_graph} RETURN n,r,m LIMIT 50`,
           };
           console.log(config.initialCypher);
           viz = new NeoVis(config);
@@ -280,7 +278,6 @@ export default {
           var selectEdgeLocked = false;
           viz.registerOnEvent("clickNode", () => {
             viz.network.on("selectNode", function (properties) {
-              this.neovis_selected_edge = false;
               if (!selectNodeLocked) {
                 selectNodeLocked = true;
                 var ids = properties.nodes;
@@ -294,7 +291,6 @@ export default {
               }
             });
             viz.network.on("doubleClick", function (properties) {
-              this.neovis_selected_edge = false;
               if (!doubleClickLocked) {
                 doubleClickLocked = true;
                 var ids = properties.nodes;
@@ -310,10 +306,10 @@ export default {
           });
           viz.registerOnEvent("clickEdge", () => {
             viz.network.on("selectEdge", function (properties) {
-              this.neovis_selected_edge = true;
               if (!selectEdgeLocked) {
                 selectEdgeLocked = true;
                 var ids = properties.edges;
+                console.log("edge ids: " + ids);
                 var clickedEdges = viz.edges.get(ids);
                 if (clickedEdges) {
                   var info = clickedEdges[0].raw;
@@ -330,7 +326,6 @@ export default {
           });
           viz.registerOnEvent("completed", () => {
             viz.network.on("stabilizationIterationsDone", function () {
-              this.neovis_selected_edge = false;
               this.loading = false;
               viz.network.selectNodes(ids);
               var selectedNodes = viz.nodes.get(ids);

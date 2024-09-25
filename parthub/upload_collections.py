@@ -46,7 +46,7 @@ def get_node_color(time: str, is_basic: bool):
 # '''
 # graph.run(query)
 
-
+fout = open('./similarity/data/seqdump.fasta', 'w')
 part_node_dict = {}
 for yr in range(2004, 2024): # TO BE MODIFIED (2024)
     print(f'Uploading {yr}...', flush=True)
@@ -103,6 +103,7 @@ for yr in range(2004, 2024): # TO BE MODIFIED (2024)
                         color=get_node_color(part_date, part_is_basic), category=part_category)
         part_list.append(part_node)
         part_node_dict.update({str(part_num): part_node})
+        fout.write(f'>{part_num}\n{part_sequence}\n')
     twins_set = set()
     for pNode in part_list:
         if pNode['ref']:
@@ -141,6 +142,7 @@ for yr in range(2004, 2024): # TO BE MODIFIED (2024)
     tx.create(subgraph)
     graph.commit(tx)
 
+fout.close()
 
 print('Creating graph...', flush=True)
 # create graph

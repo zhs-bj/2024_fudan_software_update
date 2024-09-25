@@ -26,7 +26,17 @@
                     :options="allBasicPartInfo"
                     placeholder="Select parts..."
                     :show-search="{ filter }"
-                    :displayRender="() => value[0] + ' - ' + value[1].name"
+                    :displayRender="
+                      () =>
+                        value[0] +
+                        ' - ' +
+                        value[1].name +
+                        ' (' +
+                        valueName[value[0]] +
+                        ': ' +
+                        value[1].value.toFixed(4) +
+                        ')'
+                    "
                   />
                   <!-- <a-form-item
                   :name="['parts', index, 'type']"
@@ -119,13 +129,13 @@ if (!regex.test(values.query)) {
                     <a-tooltip placement="right">
                       <template #title>
                         <b>Name:</b>&nbsp;{{
-                          basicPart.info.name.length > 30
-                            ? basicPart.info.name.slice(0, 27) + "..."
+                          basicPart.info.name.length > 50
+                            ? basicPart.info.name.slice(0, 47) + "..."
                             : basicPart.info.name
                         }}<br />
                         <b>Sequence:</b>&nbsp;{{
-                          basicPart.info.seq.length > 30
-                            ? basicPart.info.seq.slice(0, 21) +
+                          basicPart.info.seq.length > 50
+                            ? basicPart.info.seq.slice(0, 41) +
                               "..." +
                               basicPart.info.seq.slice(-6)
                             : basicPart.info.seq
@@ -134,12 +144,29 @@ if (!regex.test(values.query)) {
                       <a-tag :color="tagColor[basicPart.type]"
                         >{{ basicPart.type }} - {{ basicPart.info.name }}
                       </a-tag>
+                      <a-tag v-if="basicPart.info.value" :color="yellow">
+                        {{ valueName[basicPart.type] }}:
+                        {{ basicPart.info.value }}
+                      </a-tag>
                     </a-tooltip>
                     <MinusCircleOutlined @click="removePart(basicPart)" />
+                    <UpCircleOutlined @click="moveUpPart(basicPart)" />
+                    <DownCircleOutlined @click="moveDownPart(basicPart)" />
                   </a-space>
                 </a-form-item>
                 <a-form-item> </a-form-item>
                 <a-form-item mode="horizontal">
+                  <a-input
+                    v-model:value="formState.copy_number"
+                    placeholder="Enter copy number"
+                    overlay-class-name="numeric-input"
+                    style="width: 40%; margin-right: 2vw"
+                    :rules="[
+                      { required: true, message: 'Missing copy number' },
+                    ]"
+                    @change="changeCopyNumber"
+                  >
+                  </a-input>
                   <a-button
                     type="primary"
                     html-type="submit"
@@ -161,7 +188,27 @@ if (!regex.test(values.query)) {
                 margin-left: 24px;
               "
             >
-              <p>Burden: xx</p>
+              <p style="font-size: 24px; margin-bottom: 12px">Burden</p>
+              <p
+                :style="{
+                  fontSize: '36px',
+                  marginBottom: '12px',
+                  color: burdenValue
+                    ? burdenValue <= 0.1
+                      ? 'green'
+                      : burdenValue <= 0.2
+                      ? 'orange'
+                      : 'red'
+                    : 'lightgray',
+                  fontWeight: burdenValue && burdenValue > 0.2 ? 'bold' : '',
+                }"
+              >
+                {{
+                  burdenValue
+                    ? (burdenValue * 100).toFixed(4) + "%"
+                    : "Not calculated yet"
+                }}
+              </p>
             </div>
           </div>
         </div>
@@ -169,7 +216,7 @@ if (!regex.test(values.query)) {
       <a-layout-footer
         style="text-align: center; padding-top: 12px; padding-bottom: 12px"
       >
-        xxx ©2024 Created by Hongcheng Chen
+        PartHub 3.0 ©2024 Created by Hongcheng Chen
       </a-layout-footer>
     </a-layout>
   </a-layout>
@@ -178,6 +225,8 @@ if (!regex.test(values.query)) {
 import headermenu from "@/components/headermenu.vue";
 import {
   MinusCircleOutlined,
+  UpCircleOutlined,
+  DownCircleOutlined,
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons-vue";
@@ -188,12 +237,14 @@ export default {
   components: {
     headermenu,
     MinusCircleOutlined,
+    UpCircleOutlined,
+    DownCircleOutlined,
     PlusOutlined,
     SearchOutlined,
   },
   data() {
     return {
-      formState: reactive({ parts: [] }),
+      formState: reactive({ parts: [], copy_number: null }),
       defaultActivate: ["2"],
       value: null,
       allBasicPartInfo: null,
@@ -204,13 +255,19 @@ export default {
         RBS: "orange",
         CDS: "green",
       },
+      valueName: {
+        promoter: "Relative promoter strength",
+        RBS: "Relative RBS strength",
+        CDS: "Length (AA)",
+      },
+      burdenValue: null,
     };
   },
   beforeCreate() {
     axios
       .get("/api/burden/get_basic_part_info")
       .then((response) => {
-        var res = response.data;
+        var res = response.data.result;
         this.allBasicPartInfo = [];
         for (var partType in res) {
           this.allBasicPartInfo.push({
@@ -218,7 +275,11 @@ export default {
             value: partType,
             children: res[partType].map((part) => ({
               label: part.name,
-              value: { name: part.name, seq: part.seq.toUpperCase() },
+              value: {
+                name: part.name,
+                value: part.value,
+                seq: part.seq.toUpperCase(),
+              },
             })),
           });
         }
@@ -234,23 +295,40 @@ export default {
     } else {
       this.formState.parts = JSON.parse(this.formState.parts);
     }
+    this.formState.copy_number = localStorage.getItem("burdenCopyNumber");
+    if (!this.formState.copy_number || this.formState.copy_number == "null") {
+      this.formState.copy_number = 15;
+    } else {
+      this.formState.copy_number = parseInt(this.formState.copy_number);
+    }
     console.log(this.formState.parts);
   },
   methods: {
     onFinish(values) {
       values = JSON.parse(JSON.stringify(values));
       console.log(values);
-      var parts_structure = values.map((item) => item.type[0].toUpperCase());
+      var parts_structure = values
+        .map((item) => item.type[0].toUpperCase())
+        .join("");
+      console.log(parts_structure);
       const regex = /^P(RC)+$/;
       if (!regex.test(parts_structure)) {
         this.$message.warning(
           "Invalid part structure. The part should begin with a promoter, followed by one or more RBS sequences, each of which is then followed by a CDS."
         );
+        return;
       }
       axios
-        .post("/api/burden/calculate", values)
+        .post("/api/burden/calculate", {
+          parts: values,
+          copy_number: this.formState.copy_number,
+        })
         .then((response) => {
           console.log(response.data);
+          this.burdenValue = response.data.result;
+          for (var i in response.data.values) {
+            this.formState.parts[i].info.value = response.data.values[i];
+          }
           this.$message.success("Burden calculation completed!");
         })
         .catch((error) => {
@@ -266,7 +344,10 @@ export default {
         if (this.allBasicPartInfo[i].value == part_type) {
           this.allBasicPartInfo[i].children.push({
             label: this.name,
-            value: { name: this.name, seq: this.seq.toUpperCase() },
+            value: {
+              name: this.name,
+              seq: this.seq.toUpperCase(),
+            },
           });
           break;
         }
@@ -289,9 +370,34 @@ export default {
       });
       localStorage.setItem("burdenParts", JSON.stringify(this.formState.parts));
     },
+    moveUpPart(part) {
+      const index = this.formState.parts.indexOf(part);
+      if (index !== -1 && index !== 0) {
+        this.formState.parts.splice(index, 1);
+        this.formState.parts.splice(index - 1, 0, part);
+        localStorage.setItem(
+          "burdenParts",
+          JSON.stringify(this.formState.parts)
+        );
+      }
+    },
+    moveDownPart(part) {
+      const index = this.formState.parts.indexOf(part);
+      if (index !== -1 && index !== this.formState.parts.length - 1) {
+        this.formState.parts.splice(index, 1);
+        this.formState.parts.splice(index + 1, 0, part);
+        localStorage.setItem(
+          "burdenParts",
+          JSON.stringify(this.formState.parts)
+        );
+      }
+    },
     clearAllParts() {
       this.formState.parts = [];
       localStorage.setItem("burdenParts", JSON.stringify(this.formState.parts));
+    },
+    changeCopyNumber() {
+      localStorage.setItem("burdenCopyNumber", this.formState.copy_number);
     },
     filter(inputValue, path) {
       return path.some(

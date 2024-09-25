@@ -51,7 +51,11 @@ def treeMap():
 # for apis
 @app.route('/api/burden/get_basic_part_info', methods=['GET'])
 def handle_get_basic_part_info():
-    return read_basic_part_csv()
+    res = read_basic_part_csv()
+    if res is None:
+        app.logger.warning('Failed to read basic part info')
+        return jsonify({"message": "Failed to read basic part info"}), 500
+    return jsonify({"result": res}), 200
 
 
 @app.route('/api/burden/get_basic_parts', methods=['POST'])
@@ -66,10 +70,11 @@ def handle_get_basic_parts():
 @app.route('/api/burden/calculate', methods=['POST'])
 def handle_calc_burden():
     data = request.json
-    if not data:
+    if not data or not data.get('parts') or not data.get('copy_number'):
         app.logger.warning('Missing data')
         return jsonify({"message": "Missing data"}), 400
-    return jsonify({"result": calc_burden(data)}), 200
+    res = calc_burden(data.get('parts'), float(data.get('copy_number')))
+    return res
     
 def allowed_file(filename):
     return '.' in filename and \

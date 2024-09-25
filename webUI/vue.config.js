@@ -15,7 +15,7 @@ module.exports = {
       filename: "index.html",
       // when using title option,
       // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
-      title: "xxx",
+      title: "PartHub 3.0",
       // chunks to include on this pages, by default includes
       // extracted common chunks and vendor chunks.
       //chunks: ['chunk-vendors', 'chunk-common', 'index']
@@ -29,7 +29,7 @@ module.exports = {
       filename: "burden.html",
       // when using title option,
       // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
-      title: "Burden Analysis | xxx",
+      title: "Burden Analysis | PartHub 3.0",
     },
     PartHub: {
       // entry for the pages
@@ -40,7 +40,7 @@ module.exports = {
       filename: "parthub.html",
       // when using title option,
       // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
-      title: "PartHub | xxx",
+      title: "PartHub | PartHub 3.0",
     },
     parts: {
       // entry for the pages
@@ -51,7 +51,7 @@ module.exports = {
       filename: "parts.html",
       // when using title option,
       // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
-      title: "PartHub Results | xxx",
+      title: "PartHub Results | PartHub 3.0",
     },
     treeMap: {
       // entry for the pages
@@ -62,7 +62,7 @@ module.exports = {
       filename: "treeMap.html",
       // when using title option,
       // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
-      title: "Parts | xxx",
+      title: "Parts | PartHub 3.0",
     },
   },
   css: {

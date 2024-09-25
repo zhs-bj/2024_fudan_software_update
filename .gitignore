@@ -20,7 +20,6 @@ dist
 template
 static
 similarity/data
-!similarity/data/seqdump.fasta
 similarity/kmer2vec
 blast+
 *.tar.gz
