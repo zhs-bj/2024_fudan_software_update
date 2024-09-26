@@ -11,7 +11,6 @@
             display: 'flex',
             flexDirection: 'row',
             justifyContent: 'flex-start',
-            alignItems: 'center',
           }"
         >
           <div style="margin-left: 1rem; width: 60%">
@@ -44,19 +43,61 @@
             </div>
           </div>
           <div style="margin-left: 1rem; width: 35%">
-            <a-card>
-              <p slot="title" id="title"></p>
-              <p id="name"></p>
-              <p id="type"></p>
-              <p id="date"></p>
-              <p id="team"></p>
-              <p id="designer"></p>
-              <p id="length"></p>
-              <p id="contents"></p>
-              <p id="category"></p>
-              <a id="sequence"> <DownloadOutlined /> Download sequence </a>
-              <a id="url"> <LinkOutlined /> View in iGEM Parts Registry </a>
-            </a-card>
+            <a-tabs v-model:activeKey="activeKey">
+              <a-tab-pane key="1" tab="Similarity">
+                <a-list
+                  item-layout="horizontal"
+                  :data-source="similarNodes"
+                  style="max-height: 90vh; overflow-y: auto"
+                >
+                  <template #renderItem="{ item }">
+                    <a-list-item>
+                      <a
+                        :href="
+                          'https://parts.igem.org/wiki/index.php?title=Part:' +
+                          item.part
+                        "
+                      >
+                        <h3 style="color: #e37654">{{ item.part }}</h3>
+                      </a>
+                      {{
+                        item.name.length <= 70
+                          ? item.name
+                          : item.name.slice(0, 67) + "..."
+                      }}
+                      <br />
+                      <b>Overall similarity:</b>&nbsp;{{
+                        item.overall_score.toFixed(2)
+                      }}
+                      <br />
+                      <b>Sequence similarity:</b>&nbsp;{{
+                        item.seq_score.toFixed(2)
+                      }}
+                      <br />
+                      <b>Category similarity:</b>&nbsp;{{
+                        item.cat_score.toFixed(2)
+                      }}
+                      <br />
+                    </a-list-item>
+                  </template>
+                </a-list>
+              </a-tab-pane>
+              <a-tab-pane key="2" tab="Part/Relationship info" force-render>
+                <a-card style="max-height: 90vh; overflow-y: auto">
+                  <p slot="title" id="title"></p>
+                  <p id="name"></p>
+                  <p id="type"></p>
+                  <p id="date"></p>
+                  <p id="team"></p>
+                  <p id="designer"></p>
+                  <p id="length"></p>
+                  <p id="contents"></p>
+                  <p id="category"></p>
+                  <a id="sequence"> <DownloadOutlined /> Download sequence </a>
+                  <a id="url"> <LinkOutlined /> View in iGEM Parts Registry </a>
+                </a-card>
+              </a-tab-pane>
+            </a-tabs>
           </div>
         </div>
       </a-layout-content>
@@ -162,6 +203,7 @@ export default {
       node: null,
       similarNodes: null,
       similarNodes_graph: null,
+      activeKey: "1",
     };
   },
   mounted() {
@@ -174,8 +216,10 @@ export default {
           curPart: this.curPart,
         })
         .then((response) => {
-          this.similarNodes = response.data.result.map((item) => item.part);
-          this.similarNodes_graph = this.similarNodes.slice(0, 30);
+          this.similarNodes = response.data.result;
+          this.similarNodes_graph = this.similarNodes
+            .map((item) => item.part)
+            .slice(0, 30);
           this.similarNodes_graph.push(this.curPart);
           this.similarNodes_graph = JSON.stringify(this.similarNodes_graph);
           this.draw();

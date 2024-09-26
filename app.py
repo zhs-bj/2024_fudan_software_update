@@ -80,20 +80,32 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/api/parthub/upload_part_file', methods=['POST'])
-# handle uploaded file in genbank or fasta format using Biopython
-def handle_upload_part_file():
+def handle_upload_part_file(request, part_type):
     if 'file' not in request.files:
         app.logger.warning('Missing file')
         return jsonify({"message": "Missing file"}), 400
     file = request.files['file']
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return parse_part_file(filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        return parse_part_file(file_path, part_type)
     else:
         app.logger.warning('Invalid file type')
         return jsonify({"message": "Invalid file type"}), 400
+
+@app.route('/api/parthub/upload_part_file/promoter', methods=['POST'])
+def handle_upload_promoter_file():
+    return handle_upload_part_file(request, 'promoter')
+
+@app.route('/api/parthub/upload_part_file/rbs', methods=['POST'])
+def handle_upload_rbs_file():
+    return handle_upload_part_file(request, 'rbs')
+
+@app.route('/api/parthub/upload_part_file/cds', methods=['POST'])
+def handle_upload_cds_file():
+    return handle_upload_part_file(request, 'cds')
+
 
 @app.route('/api/parthub/search', methods=['POST'])
 def handle_parthub_search():

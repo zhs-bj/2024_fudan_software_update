@@ -19,3 +19,7 @@ Added burden UI, enabled selection of commonly used basic parts and search for p
 # Note on 2024.9.23
 
 Added burden calculation, and users can now select parts from PartHub database (i.e. the iGEM registry).
+
+# Note on 2024.9.25
+
+Added part file uploading functionality, and users can now upload their own parts and search for similar parts in PartHub database.

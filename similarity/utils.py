@@ -7,6 +7,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from flask import jsonify
+from datetime import datetime
+from time import time
 
 graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j")
 node_matcher = NodeMatcher(graph)
@@ -63,7 +65,7 @@ def query_similarity(curPart: str):
 
     # Calculate the similarity score
     try:
-        max_bs = float(df[(df.iloc[:, 1] == curPart) & (df.iloc[:, 3] == len(curSeq))].iloc[0, 11])
+        max_bs = float(df.iloc[0, 11])
     except:
         return None
     results = []
@@ -71,7 +73,7 @@ def query_similarity(curPart: str):
         matchedNode = node_matcher.match("Part", number=part).first()
         if matchedNode is None:
             continue
-        res_dict = {"part": part, "seq_score": 0.0, 'cat_score': 0.0}
+        res_dict = {"part": part, "name": matchedNode["name"], "seq_score": 0.0, 'cat_score': 0.0}
         for i in df[df.iloc[:, 1] == part].index:
             identity = float(df.iloc[i, 2])
             bit_score = float(df.iloc[i, 11])
@@ -96,12 +98,20 @@ def query_similarity(curPart: str):
         graph.run(query)
     return results
 
-def parse_part_file(filename: str):
+def parse_part_file(filename: str, part_type: str):
+    if part_type != 'promoter':
+        part_type = part_type.upper()
     file_format = filename.rsplit('.', 1)[1].lower()
     try:
         records = list(SeqIO.parse(filename, file_format))
         record = records[0]
-        seq = str(record.seq)
-        category = record.description.split(' ')[1]
+        seq = str(record.seq).upper()
     except:
         return jsonify({"message": "File parse error. Please check the file format."}), 400
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    curtime = int((time()-1727325400)*1000)
+    query = "CREATE (n:Part{number:'New_part_" + str(curtime) + "',name:'New_part_" + now + \
+        "',type:'" + part_type + "',sequence:'" + seq + "',contents:'',length:" + str(len(seq)) + \
+        ",date:'',team:'User',designer:'User',category:'',url:''})"
+    graph.run(query)
+    return jsonify({"part_id": "New_part_" + str(curtime)}), 200

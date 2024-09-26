@@ -7,10 +7,10 @@ RBS_CDS_SCAR = 'TACTAG'
 
 # fitted parameters
 growth_WT = 20246867.33991941
-beta_prom = 35.75
-beta_rbs = 10.92073672
-K_prom = 3.229389306029437
-B_prom = 3428.628874021221
+beta_prom = 69.49128805
+beta_rbs = 50.31487379
+K_prom = 4.50839026
+B_prom = 1277.41
 K_rbs = 0.21170254
 b_rbs = 0.24290994
 beta_copy_number = 200

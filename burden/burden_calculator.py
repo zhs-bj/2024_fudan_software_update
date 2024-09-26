@@ -46,12 +46,15 @@ def burden_calculator(copy_number: float, prom_strength: float, tl_units: list[t
     ns = 0.5
     # - heterologous
     wic = (copy_number / beta_copy_number) * (prom_strength / beta_prom)
-    rbsH = rbs_strengths * beta_rbs
-    nic = len_aa # BFP (GFP:238)
-    thetaic = 4.38 * np.ones(len(rbsH))
-    Ric = np.ones(len(rbsH))
-    gmaxic = 1260 * np.ones(len(rbsH))
-    parameters = (thetar, s0, gmax, thetax, Kt, M, we, Km, vm, nx, Kq, Kg, vt, wr, wq, wic, nq, nr, ns, nic, thetaic, Ric, gmaxic)
+    rbsH = rbs_strengths * beta_rbs # array
+    nic = len_aa # array
+    thetaic = 4.38 * np.ones(len(rbsH)) # array
+    Ric = np.ones(len(rbsH)) # array
+    gmaxic = 1260 * np.ones(len(rbsH)) # array
+    parameters = [thetar, s0, gmax, thetax, Kt, M, we, Km, vm, nx, Kq, Kg, vt, wr, wq, wic, nq, nr, ns]
+    for i in nic, thetaic, Ric, gmaxic:
+        for j in i:
+            parameters.append(j)
 
     # define rate constants
     # - endogeneous
@@ -60,11 +63,14 @@ def burden_calculator(copy_number: float, prom_strength: float, tl_units: list[t
     kb = 0.0095
     ku = 1.0
     # - heterologous
-    kbic = 1e-2 * rbsH
-    kuic = 1e-2 * np.ones(len(rbsH))
-    dmic = np.log(2) / 2 * np.ones(len(rbsH))
-    dpic = np.log(2) / 4 * np.ones(len(rbsH))
-    rates = (b, dm, kb, ku, kbic, kuic, dmic, dpic)
+    kbic = 1e-2 * rbsH # array
+    kuic = 1e-2 * np.ones(len(rbsH)) # array
+    dmic = np.log(2) / 2 * np.ones(len(rbsH)) # array
+    dpic = np.log(2) / 4 * np.ones(len(rbsH)) # array
+    rates = [b, dm, kb, ku]
+    for i in kbic, kuic, dmic, dpic:
+        for j in i:
+            rates.append(j)
 
     # define initial conditions
     rmr_0 = 0
@@ -82,10 +88,13 @@ def burden_calculator(copy_number: float, prom_strength: float, tl_units: list[t
     r_0 = 10.0
     a_0 = 1000.0
     lam_0 = 0
-    mic_0 = 0
-    rmic_0 = 0
-    pic_0 = 0
-    init = (rmr_0, em_0, rmq_0, rmt_0, et_0, rmm_0, mt_0, mm_0, q_0, si_0, mq_0, mr_0, mic_0, rmic_0, pic_0, r_0, a_0, lam_0)
+    mic_0 = np.zeros(len(rbsH)) # array
+    rmic_0 = np.zeros(len(rbsH)) # array
+    pic_0 = np.zeros(len(rbsH)) # array
+    init = [rmr_0, em_0, rmq_0, rmt_0, et_0, rmm_0, mt_0, mm_0, q_0, si_0, mq_0, mr_0, r_0, a_0, lam_0]
+    for i in mic_0, rmic_0, pic_0:
+        for j in i:
+            init.append(j)
 
     # call solver routine 
     t0 = 0
@@ -106,10 +115,10 @@ def burden_calculator(copy_number: float, prom_strength: float, tl_units: list[t
     si = y[9]
     mq = y[10]
     mr = y[11]
-    mic = y[12]
-    rmic = y[13]
-    pic = y[14]
-    r = y[15]
-    a = y[16]
-    lam = y[17]
+    r = y[12]
+    a = y[13]
+    lam = y[14]
+    mic = y[15:15+len(rbsH)]
+    rmic = y[15+len(rbsH):15+2*len(rbsH)]
+    pic = y[15+2*len(rbsH):15+3*len(rbsH)]
     return 1 - lam[-1] / growth_WT

@@ -165,15 +165,13 @@ if (!regex.test(values.query)) {
                 <a-form-item mode="horizontal">
                   <a-tooltip placement="bottomLeft">
                     <template #title>
-                      <b
-                        >Some average copy numbers for low, medium, and high
-                        copy number plasmids:</b
-                      >
+                      <b>Copy numbers for common plasmids:</b>
                       <br />
-                      <b>Low:</b>&nbsp;15-20 copies<br />
-                      <b>Medium:</b>&nbsp;20-100 copies<br />
-                      <b>High:</b>&nbsp;500-700 copies<br />
+                      <b>Average Low:</b>&nbsp;15-20 copies<br />
+                      <b>Average Medium:</b>&nbsp;20-100 copies<br />
+                      <b>Average High:</b>&nbsp;500-700 copies<br />
                       <b>pSB1C3, pSB1A2:</b>&nbsp;100-300 copies<br />
+                      <b>J61002:</b>&nbsp;25-30 copies<br />
                     </template>
                     <a-input
                       v-model:value="formState.copy_number"

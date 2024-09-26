@@ -15,14 +15,16 @@
 import numpy as np
 
 def cellmodel_odes(t, y, rates, parameters):
+    assert len(rates) % 4 == 0
+    n_cds = (len(rates) - 4) // 4
     b = rates[0]
     dm = rates[1]
     kb = rates[2]
     ku = rates[3]
-    kbic = rates[4]
-    kuic = rates[5]
-    dmic = rates[6]
-    dpic = rates[7]
+    kbic = np.array(rates[4:4+n_cds])
+    kuic = np.array(rates[4+n_cds:4+2*n_cds])
+    dmic = np.array(rates[4+2*n_cds:4+3*n_cds])
+    dpic = np.array(rates[4+3*n_cds:4+4*n_cds])
 
     thetar = parameters[0]
     s0 = parameters[1]
@@ -43,10 +45,10 @@ def cellmodel_odes(t, y, rates, parameters):
     nq = parameters[16]
     nr = parameters[17]
     ns = parameters[18]
-    nic = parameters[19]
-    thetaic = parameters[20]
-    Ric = parameters[21]
-    gmaxic = parameters[22]
+    nic = np.array(parameters[19:19+n_cds])
+    thetaic = np.array(parameters[19+n_cds:19+2*n_cds])
+    Ric = np.array(parameters[19+2*n_cds:19+3*n_cds])
+    gmaxic = np.array(parameters[19+3*n_cds:19+4*n_cds])
 
     rmr = y[0]
     em = y[1]
@@ -60,16 +62,16 @@ def cellmodel_odes(t, y, rates, parameters):
     si = y[9]
     mq = y[10]
     mr = y[11]
-    mic = y[12]
-    rmic = y[13]
-    pic = y[14]
-    r = y[15]
-    a = y[16]
+    r = y[12]
+    a = y[13]
+    mic = np.array(y[15:15+n_cds])
+    rmic = np.array(y[15+n_cds:15+2*n_cds])
+    pic = np.array(y[15+2*n_cds:15+3*n_cds])
 
     gamma = gmax * a / (Kg + a)
     gammaic = gmaxic * a / (Kg + a)
     ttrate = (rmq + rmr + rmt + rmm) * gamma
-    lam = (ttrate + gamma * rmic) / M
+    lam = (ttrate + gamma * np.sum(rmic)) / M
     vcat = em * vm * si / (Km + si)
 
     dydt = np.zeros(len(y))
@@ -85,11 +87,11 @@ def cellmodel_odes(t, y, rates, parameters):
     dydt[9] = (et * vt * s0 / (Kt + s0)) - vcat - lam * si
     dydt[10] = (wq * a / (thetax + a) / (1 + (q / Kq) ** nq)) + ku * rmq + gamma / nx * rmq - kb * r * mq - dm * mq - lam * mq
     dydt[11] = (wr * a / (thetar + a)) + ku * rmr + gamma / nr * rmr - kb * r * mr - dm * mr - lam * mr
-    dydt[12] = (wic * a / (thetaic + a) * Ric) + kuic * rmic - kbic * r * mic + gammaic / nic * rmic - dmic * mic - lam * mic
-    dydt[13] = kbic * r * mic - kuic * rmic - gammaic / nic * rmic - lam * rmic
-    dydt[14] = gammaic / nic * rmic - lam * pic - dpic * pic
-    dydt[15] = ku * rmr + ku * rmt + ku * rmm + ku * rmq + gamma / nr * rmr + gamma / nr * rmr + gamma / nx * rmt + gamma / nx * rmm + gamma / nx * rmq - kb * r * mr - kb * r * mt - kb * r * mm - kb * r * mq - lam * r + np.sum(gammaic / nic * rmic - kbic * r * mic + kuic * rmic)
-    dydt[16] = ns * vcat - ttrate - np.sum(gammaic * rmic) - lam * a
-    dydt[17] = lam
+    dydt[12] = ku * rmr + ku * rmt + ku * rmm + ku * rmq + gamma / nr * rmr + gamma / nr * rmr + gamma / nx * rmt + gamma / nx * rmm + gamma / nx * rmq - kb * r * mr - kb * r * mt - kb * r * mm - kb * r * mq - lam * r + np.sum(gammaic / nic * rmic - kbic * r * mic + kuic * rmic)
+    dydt[13] = ns * vcat - ttrate - np.sum(gammaic * rmic) - lam * a
+    dydt[14] = lam
+    dydt[15:15+n_cds] = (wic * a / (thetaic + a) * Ric) + kuic * rmic - kbic * r * mic + gammaic / nic * rmic - dmic * mic - lam * mic
+    dydt[15+n_cds:15+2*n_cds] = kbic * r * mic - kuic * rmic - gammaic / nic * rmic - lam * rmic
+    dydt[15+2*n_cds:15+3*n_cds] = gammaic / nic * rmic - lam * pic - dpic * pic
 
     return dydt
