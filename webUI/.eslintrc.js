@@ -13,6 +13,7 @@ module.exports = {
     "no-unused-vars": "warn",
     "vue/multi-word-component-names": "off",
     "vue/no-v-model-argument": "off",
+    "vue/no-unused-vars": "warn",
   },
   overrides: [
     {

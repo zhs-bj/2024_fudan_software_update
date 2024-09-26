@@ -19,10 +19,10 @@ basement_dist
 dist
 template
 static
-biobert
-kmer2vec
-data
-!data/seqdump.fasta
-!data/text_embeddings.csv
+similarity/data
+similarity/kmer2vec
 blast+
 *.tar.gz
+old_collections
+*.ipynb
+debug_webui.sh
