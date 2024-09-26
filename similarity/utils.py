@@ -36,23 +36,30 @@ def query_similarity(curPart: str):
         return None
     curSeq = curNode["sequence"]
     curCat = curNode["category"]
-    with open("./similarity/data/temp_query.fasta", "w") as fout:
+    curTime = int(time() * 1e6)
+    temp_query = f"./similarity/data/temp_query_{curTime}.fasta"
+    query_ans = f"./similarity/data/query_ans_{curTime}.txt"
+    with open(temp_query, "w") as fout:
         fout.write(f">{curPart}\n{curSeq}\n")
     
     # Run BLAST
-    cmd = "./blast+/bin/blastn -query ./similarity/data/temp_query.fasta " \
+    cmd = "./blast+/bin/blastn -query "+temp_query+" " \
               "-db ./similarity/data/seqdump.fasta " \
-              "-out ./similarity/data/query_ans.txt -evalue 1e-5 -outfmt 6"
+              "-out "+query_ans+" -evalue 1e-5 -outfmt 6"
     if len(curSeq) <= 32:
         cmd += " -task blastn-short"
     status = os.system(cmd)
     if status != 0:
         return None
     try:
-        df = pd.read_csv("./similarity/data/query_ans.txt", sep="\t", header=None)
+        df = pd.read_csv(query_ans, sep="\t", header=None)
     except pd.errors.EmptyDataError:
+        os.remove(temp_query)
+        os.remove(query_ans)
         return []
     
+    os.remove(temp_query)
+    os.remove(query_ans)
     # Remove parts that refer to or are referred by the current part
     parts = set(df.iloc[:, 1])
     query = "MATCH (n:Part {number: '" + curPart + "'})-[:`refers to`]->{0,100}(m:Part) RETURN m.number"
@@ -108,8 +115,9 @@ def parse_part_file(filename: str, part_type: str):
         seq = str(record.seq).upper()
     except:
         return jsonify({"message": "File parse error. Please check the file format."}), 400
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    curtime = int((time()-1727325400)*1000)
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    TIME_BASE = 1727325400
+    curtime = int((time() - TIME_BASE) * 1000)
     query = "CREATE (n:Part{number:'New_part_" + str(curtime) + "',name:'New_part_" + now + \
         "',type:'" + part_type + "',sequence:'" + seq + "',contents:'',length:" + str(len(seq)) + \
         ",date:'',team:'User',designer:'User',category:'',url:''})"

@@ -18,7 +18,8 @@
             <p>
               Scroll to zoom the canvas and drag to move the nodes. Click the
               circle to display the part details and double click to go to the
-              part page.
+              part page. You can <b>toggle between similar parts</b> and
+              <b>part/relationship information</b> by clicking on the tabs.
             </p>
             <div
               style="
@@ -353,7 +354,6 @@ export default {
               if (!selectEdgeLocked) {
                 selectEdgeLocked = true;
                 var ids = properties.edges;
-                console.log("edge ids: " + ids);
                 var clickedEdges = viz.edges.get(ids);
                 if (clickedEdges) {
                   var info = clickedEdges[0].raw;

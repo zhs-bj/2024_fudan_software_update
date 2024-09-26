@@ -23,3 +23,7 @@ Added burden calculation, and users can now select parts from PartHub database (
 # Note on 2024.9.25
 
 Added part file uploading functionality, and users can now upload their own parts and search for similar parts in PartHub database.
+
+# Note on 2024.9.26
+
+v0.0.2: Successfully merged to main.
