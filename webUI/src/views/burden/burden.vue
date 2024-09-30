@@ -28,10 +28,15 @@
                 @finish="onFinish(formState.parts)"
                 @finishFailed="onFinishFailed(formState.parts)"
               >
-                <a-form-item mode="horizontal" style="margin-top: 24px">
+                <a-form-item mode="horizontal" style="margin-top: 4vh">
                   <a-cascader
                     v-model:value="value"
-                    style="width: 70%; margin-right: 2vw"
+                    style="
+                      width: 70%;
+                      margin-top: 3vh;
+                      margin-bottom: 0;
+                      margin-right: 2vw;
+                    "
                     :options="allBasicPartInfo"
                     placeholder="Basic parts library (Select commonly used parts here!)"
                     :show-search="{ filter }"
@@ -51,7 +56,7 @@
                     type="dashed"
                     :disabled="!value"
                     @click="addPart"
-                    style="width: 20%"
+                    style="width: 20%; margin-top: 2vh; margin-bottom: 0"
                   >
                     <PlusOutlined />
                     Add basic part
