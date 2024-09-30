@@ -38,13 +38,17 @@
                   flex-direction: column;
                 "
               >
-                <a-spin :spinning="loading" tip="loading" size="large">
+                <a-spin
+                  :spinning="loading"
+                  tip="Loading... May take about 1 minute"
+                  size="large"
+                >
                 </a-spin>
               </div>
             </div>
           </div>
           <div style="margin-left: 1rem; width: 35%">
-            <a-tabs v-model:activeKey="activeKey">
+            <a-tabs v-model:activeKey="activeKey" :disabled="!similarNodes">
               <a-tab-pane key="1" tab="Similarity">
                 <a-list
                   item-layout="horizontal"

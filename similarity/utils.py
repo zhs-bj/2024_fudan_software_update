@@ -9,8 +9,12 @@ from Bio.SeqRecord import SeqRecord
 from flask import jsonify
 from datetime import datetime
 from time import time
+import sys
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+from config import parthub_config
 
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j")
+graph = Graph(parthub_config["serverUrl"], auth=("neo4j", "igem2024"), name="neo4j")
 node_matcher = NodeMatcher(graph)
 
 BASE = 1.5
@@ -106,8 +110,6 @@ def query_similarity(curPart: str):
     return results
 
 def parse_part_file(filename: str, part_type: str):
-    if part_type != 'promoter':
-        part_type = part_type.upper()
     file_format = filename.rsplit('.', 1)[1].lower()
     try:
         records = list(SeqIO.parse(filename, file_format))
@@ -115,11 +117,18 @@ def parse_part_file(filename: str, part_type: str):
         seq = str(record.seq).upper()
     except:
         return jsonify({"message": "File parse error. Please check the file format."}), 400
+    return jsonify({"seq": seq}), 200
+
+def add_new_part(part_type: str, seq: str):
+    seq = seq.upper()
     now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     TIME_BASE = 1727325400
     curtime = int((time() - TIME_BASE) * 1000)
-    query = "CREATE (n:Part{number:'New_part_" + str(curtime) + "',name:'New_part_" + now + \
-        "',type:'" + part_type + "',sequence:'" + seq + "',contents:'',length:" + str(len(seq)) + \
-        ",date:'',team:'User',designer:'User',category:'',url:''})"
-    graph.run(query)
+    try:
+        query = "CREATE (n:Part{number:'New_part_" + str(curtime) + "',name:'" + now + \
+            "',type:'" + part_type + "',sequence:'" + seq + "',contents:'',length:" + str(len(seq)) + \
+            ",date:'',team:'User',designer:'User',category:'',url:''})"
+        graph.run(query)
+    except:
+        return jsonify({"message": "Failed to add new part"}), 500
     return jsonify({"part_id": "New_part_" + str(curtime)}), 200

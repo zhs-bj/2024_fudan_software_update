@@ -7,16 +7,15 @@ from werkzeug.utils import secure_filename
 
 import config
 from parthub.utils import parthub_search, create_parthub_seq_file, get_part_id
-from similarity.utils import query_similarity, parse_part_file
+from similarity.utils import query_similarity, parse_part_file, add_new_part
 from burden.utils import read_basic_part_csv, get_basic_parts, calc_burden
 
-UPLOAD_FOLDER = '/app/uploads'
-ALLOWED_EXTENSIONS = {'gb', 'fasta'}
 parthub_config = config.parthub_config
+parthub_config["serverUrl"] = 'bolt://localhost:7687'
 template_folder = path.abspath('webUI/template')
 static_folder = path.abspath('webUI/static')
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder, static_url_path='')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = config.UPLOAD_FOLDER
 Compress(app)
 
 
@@ -78,7 +77,7 @@ def handle_calc_burden():
     
 def allowed_file(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in config.ALLOWED_EXTENSIONS
 
 def handle_upload_part_file(request, part_type):
     if 'file' not in request.files:
@@ -89,23 +88,39 @@ def handle_upload_part_file(request, part_type):
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
-        return parse_part_file(file_path, part_type)
+        ret = parse_part_file(file_path, part_type)
+        os.remove(file_path)
+        return ret
     else:
         app.logger.warning('Invalid file type')
         return jsonify({"message": "Invalid file type"}), 400
 
-@app.route('/api/parthub/upload_part_file/promoter', methods=['POST'])
+@app.route('/api/upload_part_file/promoter', methods=['POST'])
 def handle_upload_promoter_file():
     return handle_upload_part_file(request, 'promoter')
 
-@app.route('/api/parthub/upload_part_file/rbs', methods=['POST'])
+@app.route('/api/upload_part_file/RBS', methods=['POST'])
 def handle_upload_rbs_file():
-    return handle_upload_part_file(request, 'rbs')
+    return handle_upload_part_file(request, 'RBS')
 
-@app.route('/api/parthub/upload_part_file/cds', methods=['POST'])
+@app.route('/api/upload_part_file/CDS', methods=['POST'])
 def handle_upload_cds_file():
-    return handle_upload_part_file(request, 'cds')
+    return handle_upload_part_file(request, 'CDS')
 
+@app.route('/api/upload_part_file/default', methods=['POST'])
+def handle_upload_default_file():
+    return handle_upload_part_file(request, 'default')
+
+
+@app.route('/api/parthub/add_new_part', methods=['POST'])
+def handle_add_new_part():
+    data = request.json
+    if not data or not data.get('type') or not data.get('seq'):
+        app.logger.warning('Missing data')
+        return jsonify({"message": "Missing data"}), 400
+    part_type = data.get('type')
+    seq = data.get('seq')
+    return add_new_part(part_type, seq)
 
 @app.route('/api/parthub/search', methods=['POST'])
 def handle_parthub_search():
@@ -157,5 +172,5 @@ def handle_seq_download(part_id):
 
 if __name__ == '__main__':
     print('Starting Flask server...')
-    app.run(debug=True, host='0.0.0.0', port=5000) # TO BE MODIFIED
+    app.run(host='0.0.0.0', port=5000)
     print('Flask server started!')
