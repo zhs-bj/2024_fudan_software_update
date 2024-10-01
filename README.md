@@ -1,15 +1,17 @@
-<div style="text-align: center" id="top">
-<h1>Parthub 3.0</h1>
-<a href="http://47.97.85.37:5000/">Demo</a>
-</div>
-<div style="text-align: center">
+# Team Fudan 2024 Software Tool
+
+# :tada: Parthub 3.0 :tada:
+
+[Demo](http://47.97.85.37:5000/)
+
+<div style="width: 100%; display: flex; justify-content: center; align-items: center">
 <img src="https://badgen.net/badge/platform/Linux,macOS,Windows?list=%7C">
 <img src="https://badgen.net/static/Python/3.12/blue">
 <img src="https://badgen.net/static/vue/3.4/green">
 <img src="https://badgen.net/static/license/CC%20BY%204.0/blue">
 <img src="https://badgen.net/docker/size/chc1234567890/fudanigem2024/1.0.0">
 </div>
-<p align="center">
+<p style="text-align:center">
   <a href="#dart-about">About</a> &#xa0; | &#xa0; 
   <a href="#sparkles-features">Features</a> &#xa0; | &#xa0;
   <a href="#rocket-technologies">Technologies</a> &#xa0; | &#xa0;
@@ -22,14 +24,20 @@
 
 ## :dart: About
 
-Describe your project
+PartHub 3.0 focuses on two critical aspects of parts: **burden estimation** and **similarity query**.
+
+For more information, please visit our [wiki](https://2024.igem.wiki/fudan/software).
 
 ## :sparkles: Highlights
 
 :heavy_check_mark: Efficiently uses the iGEM Registry, and supports relevant synthetic biology standards such as Genbank and FASTA format
+
 :heavy_check_mark: Validation against both published and new experimental data
+
 :heavy_check_mark: Flexible and adaptable design, can be easily tailored to a wide range of application scenarios
+
 :heavy_check_mark: Well-documented APIs; easy integration with Snapgene
+
 :heavy_check_mark: Intuitive web UI, comprehensive documentation, and detailed tutorial
 
 ## :rocket: Technologies
@@ -42,12 +50,6 @@ The following tools were used in this project:
 - [Node.js](https://nodejs.org/en/)
 - [Docker](https://www.docker.com/)
 - [Neo4j 5.11](https://neo4j.com/)
-
-## :clipboard: Description
-
-PartHub 3.0 focuses on two critical aspects of parts: **burden estimation** and **similarity query**.
-
-For detailed information, please visit our [wiki](https://2024.igem.wiki/fudan/software).
 
 ## :checkered_flag: Installation
 
