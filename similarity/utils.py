@@ -111,6 +111,8 @@ def query_similarity(curPart: str):
 
 def parse_part_file(filename: str, part_type: str):
     file_format = filename.rsplit('.', 1)[1].lower()
+    if file_format == 'fa':
+        file_format = 'fasta'
     try:
         records = list(SeqIO.parse(filename, file_format))
         record = records[0]

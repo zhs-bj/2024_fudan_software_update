@@ -147,7 +147,7 @@
                   </a-button>
                 </a-form-item>
                 <a-divider>Current parts:</a-divider>
-                <a-form-item style="height: 25vh; overflow-y: auto">
+                <a-form-item style="height: 20vh; overflow-y: auto">
                   <a-space
                     v-for="basicPart in formState.parts"
                     :key="basicPart.id"

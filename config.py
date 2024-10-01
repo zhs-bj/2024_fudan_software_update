@@ -7,4 +7,4 @@ parthub_config = {
 }
 
 UPLOAD_FOLDER = '/app/uploads'
-ALLOWED_EXTENSIONS = {'gb', 'fasta'}
+ALLOWED_EXTENSIONS = {'gb', 'fa', 'fasta'}
