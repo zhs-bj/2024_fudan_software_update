@@ -27,3 +27,7 @@ Added part file uploading functionality, and users can now upload their own part
 # Note on 2024.9.26
 
 v0.0.2: Successfully merged to main.
+
+# Note on 2024.9.30
+
+Added homepage and documentation.
