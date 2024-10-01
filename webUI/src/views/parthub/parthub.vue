@@ -175,7 +175,7 @@ export default {
         .then((response) => {
           console.log(response);
           message.success("New part added successfully!");
-          localStorage.setItem("curPart", response.data.id);
+          localStorage.setItem("curPart", response.data.part_id);
           window.location.href = "/treemap";
         })
         .catch((error) => {
