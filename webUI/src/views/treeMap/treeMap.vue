@@ -18,7 +18,8 @@
             <p>
               Scroll to zoom the canvas and drag to move the nodes. Click the
               circle to display the part details and double click to go to the
-              part page.
+              part page. You can <b>toggle between similar parts</b> and
+              <b>part/relationship information</b> by clicking on the tabs.
             </p>
             <div
               style="
@@ -37,13 +38,17 @@
                   flex-direction: column;
                 "
               >
-                <a-spin :spinning="loading" tip="loading" size="large">
+                <a-spin
+                  :spinning="loading"
+                  tip="Loading... May take about 1 minute"
+                  size="large"
+                >
                 </a-spin>
               </div>
             </div>
           </div>
           <div style="margin-left: 1rem; width: 35%">
-            <a-tabs v-model:activeKey="activeKey">
+            <a-tabs v-model:activeKey="activeKey" :disabled="!similarNodes">
               <a-tab-pane key="1" tab="Similarity">
                 <a-list
                   item-layout="horizontal"
@@ -353,7 +358,6 @@ export default {
               if (!selectEdgeLocked) {
                 selectEdgeLocked = true;
                 var ids = properties.edges;
-                console.log("edge ids: " + ids);
                 var clickedEdges = viz.edges.get(ids);
                 if (clickedEdges) {
                   var info = clickedEdges[0].raw;

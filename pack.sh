@@ -5,6 +5,5 @@ if [ $? -ne 0 ]; then
 else
     cd ../
     python pack.py
-    git add .
     docker compose up -d
 fi

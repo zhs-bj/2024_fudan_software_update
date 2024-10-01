@@ -29,7 +29,7 @@ module.exports = {
       filename: "burden.html",
       // when using title option,
       // template title tag needs to be <title><%= htmlWebpackPlugin.options.title %></title>
-      title: "Burden Analysis | PartHub 3.0",
+      title: "Burden Predictor | PartHub 3.0",
     },
     PartHub: {
       // entry for the pages

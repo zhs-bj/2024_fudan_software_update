@@ -62,29 +62,46 @@
                 </a-radio-group>
               </a-form-item>
             </a-form>
-            <p style="margin-top: 10vh; margin-bottom: 2vh">
-              To search for similar parts of your own part, <br />
-              please upload a part sequence file from your computer:
+            <p style="margin-top: 10vh; margin-bottom: 4vh">
+              To search for similar parts of your own part, please enter<br />
+              part sequence or upload a part sequence file from your computer:
             </p>
             <a-select
               v-model:value="uploadPartType"
-              style="width: 80%; margin-top: 2vh"
+              style="width: 90%; margin-bottom: 2vh"
               @focus="focus"
               placeholder="Select part type"
             >
-              <a-select-option value="promoter">promoter</a-select-option>
-              <a-select-option value="rbs">RBS</a-select-option>
-              <a-select-option value="cds">CDS</a-select-option>
+              <a-select-option value="promoter">Promoter</a-select-option>
+              <a-select-option value="RBS">RBS</a-select-option>
+              <a-select-option value="CDS">CDS</a-select-option>
+              <a-select-option value="default">Others</a-select-option>
             </a-select>
+            <div mode="horizontal" style="margin-bottom: 2vh">
+              <a-input
+                v-model:value="similarSeq"
+                style="width: 60%"
+                :disabled="!uploadPartType"
+                placeholder="Enter part sequence..."
+              />
+              <a-button
+                type="primary"
+                style="width: 30%"
+                :disabled="!uploadPartType || !similarSeq"
+                @click="handleSearchSimilar"
+              >
+                Search similar parts
+              </a-button>
+            </div>
             <a-upload-dragger
               v-model:fileList="fileList"
               name="file"
               :max-count="1"
               :multiple="false"
               :disabled="!uploadPartType"
-              :action="'/api/parthub/upload_part_file/' + uploadPartType"
+              :action="'/api/upload_part_file/' + uploadPartType"
               @change="handleChange"
-              style="margin-top: 2vh; max-height: 25vh; display: block"
+              style="max-height: 25vh; display: block"
             >
               <p class="ant-upload-drag-icon">
                 <InboxOutlined />
@@ -112,6 +129,7 @@ import headermenu from "@/components/headermenu.vue";
 import { reactive } from "vue";
 import { message } from "ant-design-vue";
 import { InboxOutlined } from "@ant-design/icons-vue";
+import axios from "axios";
 const formState = reactive({
   query: "",
   type: "",
@@ -128,6 +146,7 @@ export default {
       defaultActivate: ["3"],
       fileList: [],
       uploadPartType: null,
+      similarSeq: null,
     };
   },
   methods: {
@@ -147,6 +166,23 @@ export default {
     onFinishFailed(errorInfo) {
       console.log(errorInfo);
     },
+    addNewPart(part_type, seq) {
+      axios
+        .post("/api/parthub/add_new_part", {
+          type: part_type,
+          seq: seq,
+        })
+        .then((response) => {
+          console.log(response);
+          message.success("New part added successfully!");
+          localStorage.setItem("curPart", response.data.id);
+          window.location.href = "/treemap";
+        })
+        .catch((error) => {
+          console.log(error);
+          message.error("Failed to add new part!");
+        });
+    },
     handleChange(info) {
       const status = info.file.status;
       if (status !== "uploading") {
@@ -154,11 +190,14 @@ export default {
       }
       if (status === "done") {
         message.success(`${info.file.name} file uploaded successfully.`);
-        localStorage.setItem("curPart", info.file.response.part_id);
-        window.location.href = "/treemap";
+        var seq = info.file.response.seq;
+        this.addNewPart(this.uploadPartType, seq);
       } else if (status === "error") {
         message.error(`${info.file.name} file upload failed.`);
       }
+    },
+    handleSearchSimilar() {
+      this.addNewPart(this.uploadPartType, this.similarSeq);
     },
   },
 };

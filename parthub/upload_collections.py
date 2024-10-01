@@ -5,9 +5,14 @@ import re
 import numpy as np
 from datetime import datetime
 import matplotlib as mpl
+import sys
+import os
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+from config import parthub_config
 
 # with neo4j running
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024")) # TO BE MODIFIED
+graph = Graph(parthub_config["serverUrl"], auth=("neo4j", "igem2024"))
 graph.delete_all()
 
 query= '''
@@ -40,21 +45,18 @@ def get_node_color(time: str, is_basic: bool):
     hex_rgb = mpl.colors.rgb2hex(cmap(norm(interval.days)))
     return hex_rgb
 
-# Delete previous graph
-# query = '''
-# CALL gds.graph.drop('parthub')
-# '''
-# graph.run(query)
 
 fout = open('./similarity/data/seqdump.fasta', 'w')
 part_node_dict = {}
-for yr in range(2004, 2024): # TO BE MODIFIED (2024)
+for yr in range(2004, 2024):
     print(f'Uploading {yr}...', flush=True)
     data = pd.read_csv(f'./parthub/collections/{yr}collection.csv')
     part_list = []
     relationship_list = []
     for i in data.index:
         part_num = str(data['part_num'].values[i])
+        if part_num in part_node_dict:
+            continue
         part_name = str(data['part_name'].values[i])
         part_url = str(data['part_url'].values[i])
         part_desc = str(data['short_desc'].values[i])

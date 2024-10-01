@@ -4,8 +4,13 @@ from flask import jsonify
 from py2neo import Node, Graph, NodeMatcher
 from burden.burden_calculator import burden_calculator
 from burden.config import *
+import sys
+import os
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+from config import parthub_config
 
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j")
+graph = Graph(parthub_config["serverUrl"], auth=("neo4j", "igem2024"), name="neo4j")
 node_matcher = NodeMatcher(graph)
 
 def read_basic_part_csv():
@@ -96,19 +101,17 @@ def calc_burden(parts: list[dict], copy_number):
         prom_strength = common_parts_map[promoter['seq']]
     else:
         prom_strength = calc_promoter_strength(promoter['seq'], parts[1]['info']['seq'])
-        prom_strength = (prom_strength - B_prom) / K_prom
     if prom_strength is None:
         return jsonify({'message': 'Failed to calculate promoter strength'}), 400
     ret_values = [prom_strength]
     tl_units = []
     for i in range(1, len(parts), 2):
         rbs = parts[i]['info']
-        cds = parts[i + 1]['info']['seq']
+        cds = parts[i + 1]['info']['seq'].upper()
         if rbs['seq'] in common_parts_map:
             rbs_strength = common_parts_map[rbs['seq']]
         else:
             rbs_strength = calc_rbs_strength(rbs['seq'], cds)
-            rbs_strength = K_rbs * np.exp(-b_rbs * rbs_strength)
         if rbs_strength is None:
             return jsonify({'message': 'Failed to calculate RBS strength'}), 400
         ret_values.append(rbs_strength)
@@ -131,7 +134,7 @@ def calc_promoter_strength(prom_seq: str, rbs_seq: str):
     output = promoter_calculator(seq)
     if len(output) == 0:
         return None
-    return output[0]['Tx_rate']
+    return output[0]['Tx_rate'] * K_prom + B_prom
 
 
 from burden.rbs_calculator.utils import run_rbs_predictor
@@ -140,4 +143,4 @@ def calc_rbs_strength(rbs_seq: str, cds: str):
     rbs_seq = (PROMOTER_RBS_SCAR + rbs_seq + RBS_CDS_SCAR).upper()
     post_seq = cds.upper()
     res = run_rbs_predictor('', post_seq, rbs_seq)
-    return res.dG_total_list[0]
+    return K_rbs * np.exp(-b_rbs * res.dG_total_list[0])

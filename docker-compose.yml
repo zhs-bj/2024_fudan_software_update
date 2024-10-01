@@ -2,13 +2,13 @@ services:
   flask:
     build:
       context: ./
+    restart: always
     ports:
       - "5000:5000"
     depends_on:
       - parthub
-    restart: always
     environment:
-      - SERVER_URL=bolt://localhost:7687 # TO BE MODIFIED
+      - SERVER_URL=bolt://parthub:7687
       - SERVER_USER=neo4j
       - SERVER_PASSWORD=igem2024
   parthub:
@@ -17,7 +17,7 @@ services:
     environment:
       - NEO4J_AUTH=neo4j/igem2024
       - NEO4J_PLUGINS=["graph-data-science"]
-      - NEO4J_dbms_security_procedures_whitelist=gds.*
+      - NEO4J_dbms_security_procedures_allowlist=gds.*
       - NEO4J_dbms_security_procedures_unrestricted=gds.*
     ports:
       - "7474:7474"

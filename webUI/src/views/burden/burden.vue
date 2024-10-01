@@ -28,11 +28,17 @@
                 @finish="onFinish(formState.parts)"
                 @finishFailed="onFinishFailed(formState.parts)"
               >
-                <a-form-item style="margin-top: 24px">
+                <a-form-item mode="horizontal" style="margin-top: 4vh">
                   <a-cascader
                     v-model:value="value"
+                    style="
+                      width: 70%;
+                      margin-top: 3vh;
+                      margin-bottom: 0;
+                      margin-right: 2vw;
+                    "
                     :options="allBasicPartInfo"
-                    placeholder="Select parts..."
+                    placeholder="Basic parts library (Select commonly used parts here!)"
                     :show-search="{ filter }"
                     :displayRender="
                       () =>
@@ -46,89 +52,102 @@
                         ')'
                     "
                   />
-                  <!-- <a-form-item
-                  :name="['parts', index, 'type']"
-                  label="Basic part type:"
-                  :rules="{
-                    required: true,
-                    message: 'Missing part type',
-                  }"
-                >
-                  <a-select
-                    v-model:value="basicPart.type"
-                    placeholder="Select part type..."
-                    :options="basicPartTypes.map((a) => ({ value: a }))"
-                    style="width: 130px"
-                  ></a-select>
-                </a-form-item>
-                <a-form-item
-                  :name="['parts', index, 'info']"
-                  label="Part information:"
-                  :rules="[
-                    { required: true, message: 'Missing part information' },
-                  ]"
-                >
-                  <a-select
-                    v-model:value="basicPart.info"
-                    placeholder="Select part..."
-                    style="width: 40vw"
-                    :disabled="!basicPart.type"
-                    :options="
-                      (console.log(allBasicPartInfo[basicPart.type]),
-                      (allBasicPartInfo[basicPart.type] || []).map((item) => ({
-                        value: item.name,
-                      })))
-                    "
-                  >
-                    <template #dropdownRender="{ menuNode: menu }">
-                      <v-nodes :vnodes="menu" />
-                      <a-divider style="margin: 4px 0" />
-                      <a-space style="padding: 4px 8px">
-                        <a-input
-                          v-model:value="name"
-                          placeholder="Enter part name..."
-                        />
-                        <a-input
-                          v-model:value="seq"
-                          placeholder="Enter part sequence..."
-                        />
-                        <a-button type="text" @click="addItem(basicPart.type)">
-                          <PlusOutlined />
-                          Add {{ basicPart.type }}
-                        </a-button>
-                      </a-space>
-                    </template>
-                  </a-select>
-                </a-form-item>
-                
-const regex = /^[ATCGatcgUu]+$/;
-if (!regex.test(values.query)) {
-  message.warning("The input sequence must be a valid base sequence!");
-  return;
-}
-                
-                -->
-                </a-form-item>
-                <a-form-item mode="horizontal">
                   <a-button
                     type="dashed"
                     :disabled="!value"
                     @click="addPart"
-                    style="width: 45%; margin-right: 2vw"
+                    style="width: 20%; margin-top: 2vh; margin-bottom: 0"
                   >
                     <PlusOutlined />
                     Add basic part
                   </a-button>
+                </a-form-item>
+                <a-form-item mode="horizontal">
                   <a-button
                     type="dashed"
                     @click="toParthub()"
-                    style="width: 45%"
+                    style="width: 90%"
                   >
                     <SearchOutlined />
                     Search in PartHub
                   </a-button>
                 </a-form-item>
-                <a-form-item style="height: 45vh; overflow-y: auto">
+                <a-form-item>
+                  <a-divider>Add new parts:</a-divider>
+                  <div mode="horizontal" style="width: 100%; margin-top: 2vh">
+                    <a-select
+                      v-model:value="uploadPartType"
+                      style="width: 45%; margin-right: 8%"
+                      @focus="focus"
+                      placeholder="Select part type"
+                    >
+                      <a-select-option value="promoter">
+                        promoter
+                      </a-select-option>
+                      <a-select-option value="RBS">RBS</a-select-option>
+                      <a-select-option value="CDS">CDS</a-select-option>
+                    </a-select>
+                    <a-input
+                      v-model:value="name"
+                      style="width: 45%"
+                      :disabled="!uploadPartType"
+                      placeholder="Enter part name..."
+                    />
+                  </div>
+                  <div
+                    mode="horizontal"
+                    style="width: 100%; margin-top: 2vh; margin-bottom: 2vh"
+                  >
+                    <a-input
+                      v-model:value="seq"
+                      style="width: 45%; margin-right: 2%"
+                      :disabled="!uploadPartType"
+                      placeholder="Enter part sequence..."
+                    />
+                    <p
+                      style="
+                        display: inline-block;
+                        width: 4%;
+                        max-height: 2vh;
+                        margin-right: 2%;
+                      "
+                    >
+                      or
+                    </p>
+                    <div
+                      style="width: 45%; display: inline-block"
+                      mode="horizontal"
+                    >
+                      <a-upload
+                        v-model:file-list="fileList"
+                        :max-count="1"
+                        :action="'/api/upload_part_file/' + uploadPartType"
+                        style="width: 100%"
+                        @change="handleChange"
+                      >
+                        <a-button
+                          type="dashed"
+                          :disabled="!uploadPartType"
+                          style="width: 100%"
+                        >
+                          <UploadOutlined />
+                          Upload a single .gb or .fasta file
+                        </a-button>
+                      </a-upload>
+                    </div>
+                  </div>
+                  <a-button
+                    type="dashed"
+                    :disabled="!uploadPartType || !name || !seq"
+                    @click="addToLibrary"
+                    style="width: 90%"
+                  >
+                    <PlusOutlined />
+                    Add to basic parts library
+                  </a-button>
+                </a-form-item>
+                <a-divider>Current parts:</a-divider>
+                <a-form-item style="height: 20vh; overflow-y: auto">
                   <a-space
                     v-for="basicPart in formState.parts"
                     :key="basicPart.id"
@@ -140,6 +159,8 @@ if (!regex.test(values.query)) {
                           basicPart.info.name.length > 50
                             ? basicPart.info.name.slice(0, 47) + "..."
                             : basicPart.info.name
+                        }}<br />
+                        <b>Length:</b>&nbsp;{{ basicPart.info.name.length
                         }}<br />
                         <b>Sequence:</b>&nbsp;{{
                           basicPart.info.seq.length > 50
@@ -171,7 +192,8 @@ if (!regex.test(values.query)) {
                       <b>Average Medium:</b>&nbsp;20-100 copies<br />
                       <b>Average High:</b>&nbsp;500-700 copies<br />
                       <b>pSB1C3, pSB1A2:</b>&nbsp;100-300 copies<br />
-                      <b>J61002:</b>&nbsp;25-30 copies<br />
+                      <b>pMB1:</b>&nbsp;15-20 copies<br />
+                      <b>pMB1 (derivative):</b>&nbsp;500-700 copies<br />
                     </template>
                     <a-input
                       v-model:value="formState.copy_number"
@@ -266,8 +288,10 @@ import {
   DownCircleOutlined,
   PlusOutlined,
   SearchOutlined,
+  UploadOutlined,
 } from "@ant-design/icons-vue";
 import { reactive } from "vue";
+import { message } from "ant-design-vue";
 import axios from "axios";
 
 export default {
@@ -278,6 +302,7 @@ export default {
     DownCircleOutlined,
     PlusOutlined,
     SearchOutlined,
+    UploadOutlined,
   },
   data() {
     return {
@@ -298,6 +323,8 @@ export default {
         CDS: "Length (AA)",
       },
       burdenValue: null,
+      fileList: [],
+      uploadPartType: null,
     };
   },
   beforeCreate() {
@@ -336,7 +363,7 @@ export default {
     if (!this.formState.copy_number || this.formState.copy_number == "null") {
       this.formState.copy_number = 15;
     } else {
-      this.formState.copy_number = parseInt(this.formState.copy_number);
+      this.formState.copy_number = parseFloat(this.formState.copy_number);
     }
     console.log(this.formState.parts);
   },
@@ -355,6 +382,7 @@ export default {
         );
         return;
       }
+      message.info("Calculating burden...");
       axios
         .post("/api/burden/calculate", {
           parts: values,
@@ -377,6 +405,7 @@ export default {
       console.log(errorInfo);
     },
     addItem(part_type) {
+      console.log([this.name, this.seq]);
       for (var i in this.allBasicPartInfo) {
         if (this.allBasicPartInfo[i].value == part_type) {
           this.allBasicPartInfo[i].children.push({
@@ -444,6 +473,35 @@ export default {
     },
     toParthub() {
       window.location.href = "/parthub";
+    },
+    handleChange(info) {
+      const status = info.file.status;
+      if (status !== "uploading") {
+        console.log(info.file, info.fileList);
+      }
+      if (status === "done") {
+        message.success(`${info.file.name} file uploaded successfully.`);
+        this.seq = info.file.response.seq;
+        if (!this.name) {
+          this.name = info.file.name;
+        }
+      } else if (status === "error") {
+        message.error(`${info.file.name} file upload failed.`);
+      }
+    },
+    addToLibrary() {
+      const regex = /^[ATCGatcgUu]+$/;
+      if (!regex.test(this.seq)) {
+        message.warning("The input sequence must be a valid base sequence!");
+        return;
+      }
+      this.formState.parts.push({
+        type: this.uploadPartType,
+        info: { name: this.name, seq: this.seq },
+        id: Date.now(),
+      });
+      localStorage.setItem("burdenParts", JSON.stringify(this.formState.parts));
+      this.addItem(this.uploadPartType);
     },
   },
 };

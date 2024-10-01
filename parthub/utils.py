@@ -2,8 +2,8 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 @File : utils.py
-@Author : Zhiyue Chen
-@Time : 2023/9/3 13:47
+@Author : Hongchen Chen
+@Time : 2024/9/10 22:50
 """
 import os
 from operator import itemgetter
@@ -15,8 +15,12 @@ from Bio.SeqRecord import SeqRecord
 from flask import jsonify, Response
 from py2neo import Node, Graph, NodeMatcher
 import re
+import sys
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_dir)
+from config import parthub_config
 
-graph = Graph("bolt://parthub:7687", auth=("neo4j", "igem2024"), name="neo4j") # TO BE MODIFIED
+graph = Graph(parthub_config["serverUrl"], auth=("neo4j", "igem2024"), name="neo4j")
 node_matcher = NodeMatcher(graph)
 
 
