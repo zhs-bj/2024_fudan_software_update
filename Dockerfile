@@ -12,6 +12,7 @@ COPY config.py /app/
 COPY parthub/collections/* /app/parthub/collections/
 COPY similarity/utils.py /app/similarity/utils.py
 COPY flask-compose.sh /app/
+# COPY ncbi-blast-2.16.0+-x64-linux.tar.gz /app/
 RUN pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 EXPOSE 5000

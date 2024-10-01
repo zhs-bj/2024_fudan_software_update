@@ -8,10 +8,38 @@
             background: '#fff',
             padding: '24px',
             marginTop: '40px',
-            minHeight: '280px',
+            minHeight: '75vh',
+            display: 'flex',
+            flexDirection: 'column',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'center',
           }"
         >
-          Content
+          <img
+            src="https://static.igem.wiki/teams/5115/software/software-logo.png"
+            style="width: 40%"
+          />
+          <h1 style="font-size: 24px; text-align: center">
+            🌟&nbsp;Welcome to PartHub 3.0!&nbsp;🌟
+          </h1>
+          <div mode="horizontal">
+            <a-button
+              type="text"
+              @click="toTutorial"
+              style="margin-right: 4px; font-size: 16px"
+              ><InfoCircleOutlined />&nbsp;Tutorial</a-button
+            >
+            <a-button
+              type="text"
+              @click="toDoc"
+              style="margin-right: 4px; font-size: 16px"
+              ><FileTextOutlined />&nbsp;Documentation</a-button
+            >
+            <a-button type="text" @click="toGitlab" style="font-size: 16px"
+              ><GitlabOutlined />&nbsp;Gitlab</a-button
+            >
+          </div>
         </div>
       </a-layout-content>
       <a-layout-footer style="text-align: center">
@@ -23,14 +51,33 @@
 
 <script>
 import headermenu from "@/components/headermenu.vue";
+import {
+  InfoCircleOutlined,
+  FileTextOutlined,
+  GitlabOutlined,
+} from "@ant-design/icons-vue";
 export default {
   components: {
     headermenu,
+    InfoCircleOutlined,
+    FileTextOutlined,
+    GitlabOutlined,
   },
   data() {
     return {
       defaultActivate: ["1"],
     };
+  },
+  methods: {
+    toTutorial() {
+      window.open("https://2024.igem.wiki/fudan/software/#tutorial");
+    },
+    toParthub() {
+      window.open("https://2024.igem.wiki/fudan/software/#document");
+    },
+    toGitlab() {
+      window.open("https://gitlab.igem.org/2024/software-tools/fudan");
+    },
   },
 };
 </script>
@@ -46,15 +93,6 @@ export default {
 .site-layout-content {
   min-height: 280px;
   padding: 24px;
-  background: #fff;
-}
-
-#components-layout-demo-top .logo {
-  float: left;
-  width: 120px;
-  height: 31px;
-  margin: 16px 24px 16px 0;
-  background: rgba(255, 255, 255, 0.3);
 }
 
 .ant-row-rtl #components-layout-demo-top .logo {
