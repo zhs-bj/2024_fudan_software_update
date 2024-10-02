@@ -1,3 +1,10 @@
+"""
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+@File : upload_collections.py
+@Author : Hongchen Chen
+@Time : 2024/9/10 22:50
+"""
 from py2neo import Node, Relationship, Graph, Subgraph
 import pandas as pd
 from tqdm import tqdm
@@ -189,21 +196,5 @@ relationshipWeightProperty: 'weight'
 })
 '''
 graph.run(query)
-
-# print('Calculating KNN...', flush=True)
-# Calculate KNN
-# query = '''
-# CALL gds.knn.write('parthub', {
-#     writeRelationshipType: 'SIMILAR',
-#     writeProperty: 'score',
-#     similarityCutoff: 0.75,
-#     topK: 5,
-#     randomSeed: 233,
-#     concurrency: 1,
-#     nodeProperties: ['textEmbedding']
-# })
-# YIELD nodesCompared, relationshipsWritten
-# '''
-# graph.run(query)
 
 print('Done!')

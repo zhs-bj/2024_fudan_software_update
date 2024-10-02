@@ -40,11 +40,11 @@ For more information, please visit our [wiki](https://2024.igem.wiki/fudan/softw
 
 :heavy_check_mark: Well-documented APIs; easy integration with Snapgene
 
-:heavy_check_mark: Intuitive web UI, comprehensive documentation, and detailed tutorial
+:heavy_check_mark: Intuitive web UI and detailed tutorial
 
 ## :rocket: Technologies
 
-The following tools were used in this project:
+The following technologies were used in this project:
 
 - [Vue.js 3.4](https://vuejs.org/)
 - [Ant Design Vue 4.2.3](https://antdv.com/components/overview)
@@ -57,7 +57,9 @@ The following tools were used in this project:
 
 You can directly visit our **live demo** at http://47.97.85.37:5000/.
 
-#### :white_check_mark: Install with readily available docker image
+**Note:** When deploying this software, an internet connection is required to download and install BLAST, gcc, and g++ in the docker container.
+
+### :white_check_mark: Install with readily available docker image
 
 Please install [Docker](https://www.docker.com/) first, and create a file named `docker-compose.yml` with the following content in your working directory:
 
@@ -99,7 +101,7 @@ docker compose up -d
 
 Once the deployment is complete, PartHub 3.0 will be running at [http://localhost:5000](http://localhost:5000/).
 
-#### :white_check_mark: Install from source code on Gitlab
+### :white_check_mark: Install from source code on Gitlab
 
 The software use [Docker](https://www.docker.com/), [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en) for deployment, so please install them first!
 

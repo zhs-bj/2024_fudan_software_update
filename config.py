@@ -1,3 +1,11 @@
+"""
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+@File : utils.py
+@Author : Hongchen Chen
+@Time : 2024/08/31 15:46:50
+"""
+
 import os
 
 parthub_config = {

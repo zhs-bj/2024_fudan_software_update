@@ -1,3 +1,7 @@
+"""
+Reference: https://github.com/barricklab/promoter-calculator
+"""
+
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from Bio.Seq import Seq
 from scipy import stats

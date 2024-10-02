@@ -1,4 +1,7 @@
-'''version 1.1'''
+"""
+ version 1.1
+ Reference: https://github.com/barricklab/promoter-calculator
+"""
 
 import random, sys, pickle, collections, operator, itertools, time, math, os
 import importlib

@@ -3,14 +3,15 @@
 # -*- coding:utf-8 -*-
 @File : burden_calculator.py
 @Author : Hongcheng Chen
+
+Reference:
+1. Weiße, A. Y., Oyarzún, D. A., Danos, V., & Swain, P. S. (2015).
+   Mechanistic links between cellular trade-offs, gene expression, and growth.
+   Proceedings of the National Academy of Sciences, 112(9), E1038-E1047.
+2. Nikolados, E.-M., Weiße, A. Y., Ceroni, F., & Oyarzún, D. A. (2019).
+   Growth Defects and Loss-of-Function in Synthetic Gene Circuits.
+   ACS Synthetic Biology, 8(6), 1231-1240.
 """
-# Reference:
-# 1. Weiße, A. Y., Oyarzún, D. A., Danos, V., & Swain, P. S. (2015).
-#    Mechanistic links between cellular trade-offs, gene expression, and growth.
-#    Proceedings of the National Academy of Sciences, 112(9), E1038-E1047.
-# 2. Nikolados, E.-M., Weiße, A. Y., Ceroni, F., & Oyarzún, D. A. (2019).
-#    Growth Defects and Loss-of-Function in Synthetic Gene Circuits.
-#    ACS Synthetic Biology, 8(6), 1231-1240.
 
 import numpy as np
 import matplotlib.pyplot as plt

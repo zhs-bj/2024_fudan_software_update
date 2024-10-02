@@ -1,9 +1,5 @@
 """
-#!/usr/bin/env python
-# -*- coding:utf-8 -*-
-@File : utils.py
-@Author : Zhiyue Chen
-@Time : 2023/8/24 0:36
+Reference: https://gitlab.igem.org/2023/software-tools/fudan
 """
 # References
 # 1. Liu, Y., Wu, Z., Wu, D., Gao, N., & Lin, J. (2023). Reconstitution of Multi-Protein Complexes through

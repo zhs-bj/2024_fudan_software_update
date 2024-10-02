@@ -1,5 +1,6 @@
 """
  Wrapper for Promoter_Calculator.py
+ Reference: https://github.com/barricklab/promoter-calculator
 """
 
 import time

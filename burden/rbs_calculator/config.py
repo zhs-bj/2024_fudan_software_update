@@ -1,9 +1,5 @@
 """
-#!/usr/bin/env python
-# -*- coding:utf-8 -*-
-@File : config.py
-@Author : Zhiyue Chen
-@Time : 2023/8/24 0:34
+Reference: https://gitlab.igem.org/2023/software-tools/fudan
 """
 max_helical_loop = 12
 min_helical_loop = 4

@@ -1,9 +1,5 @@
 """
-#!/usr/bin/env python
-# -*- coding:utf-8 -*-
-@File : constant.py
-@Author : Zhiyue Chen
-@Time : 2023/8/24 0:35
+Reference: https://gitlab.igem.org/2023/software-tools/fudan
 """
 # From experimental characterization from Salis, H. M., Mirsky, E. A., & Voigt, C. A. (2009). Automated design of
 # synthetic ribosome binding sites to control protein expression. Nature Biotechnology, 27(10), Article 10.
