@@ -200,7 +200,7 @@
                       placeholder="Enter copy number"
                       overlay-class-name="numeric-input"
                       addon-before="Copy number:"
-                      style="width: 40%; margin-right: 1vw"
+                      style="width: 30%; margin-right: 1vw"
                       :rules="[
                         { required: true, message: 'Missing copy number' },
                       ]"
@@ -209,8 +209,8 @@
                     </a-input>
                   </a-tooltip>
                   <a-switch v-model:checked="usePRAP" style="margin-right: 1vw">
-                    Calculate as pRAP
                   </a-switch>
+                  <span style="margin-right: 1vw"> Calculate as pRAP </span>
                   <a-button
                     type="primary"
                     html-type="submit"
