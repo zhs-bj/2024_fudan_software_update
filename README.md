@@ -129,7 +129,7 @@ Once the deployment is complete, PartHub 3.0 will be running at [http://localhos
 
 This project is under license of Creative Commons Attribution 4.0 International. For more details, see the [LICENSE](https://gitlab.igem.org/2024/software-tools/fudan/-/blob/main/LICENSE) file.
 
-## :shake: Acknowledgments
+## Acknowledgments
 
 We would like to thank the previous Fudan iGEM team members for their contributions to the development of PartHub 1.0 and 2.0.
 
