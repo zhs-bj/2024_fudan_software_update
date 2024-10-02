@@ -160,7 +160,7 @@
                             ? basicPart.info.name.slice(0, 47) + "..."
                             : basicPart.info.name
                         }}<br />
-                        <b>Length:</b>&nbsp;{{ basicPart.info.name.length
+                        <b>Length:</b>&nbsp;{{ basicPart.info.seq.length
                         }}<br />
                         <b>Sequence:</b>&nbsp;{{
                           basicPart.info.seq.length > 50
