@@ -200,7 +200,7 @@
                       placeholder="Enter copy number"
                       overlay-class-name="numeric-input"
                       addon-before="Copy number:"
-                      style="width: 40%; margin-right: 2vw"
+                      style="width: 40%; margin-right: 1vw"
                       :rules="[
                         { required: true, message: 'Missing copy number' },
                       ]"
@@ -208,6 +208,9 @@
                     >
                     </a-input>
                   </a-tooltip>
+                  <a-switch v-model:checked="usePRAP" style="margin-right: 1vw">
+                    Calculate as pRAP
+                  </a-switch>
                   <a-button
                     type="primary"
                     html-type="submit"
@@ -325,6 +328,7 @@ export default {
       burdenValue: null,
       fileList: [],
       uploadPartType: null,
+      usePRAP: false,
     };
   },
   beforeCreate() {
@@ -387,6 +391,7 @@ export default {
         .post("/api/burden/calculate", {
           parts: values,
           copy_number: this.formState.copy_number,
+          use_prap: this.usePRAP ? "true" : "false",
         })
         .then((response) => {
           console.log(response.data);

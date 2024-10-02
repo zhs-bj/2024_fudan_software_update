@@ -18,7 +18,7 @@
         >
           <img
             src="https://static.igem.wiki/teams/5115/software/software-logo.png"
-            style="width: 40%"
+            style="height: 55vh"
           />
           <h1 style="font-size: 24px; text-align: center">
             🌟&nbsp;Welcome to PartHub 3.0!&nbsp;🌟

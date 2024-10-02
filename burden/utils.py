@@ -35,7 +35,7 @@ def parse_basic_part(curPart: Node):
         part_type = 'promoter'
     elif registry_type == 'RBS':
         part_type = 'RBS'
-    elif registry_type == 'Coding':
+    elif registry_type == 'Coding' or registry_type == 'Reporter':
         part_type = 'CDS'
     elif registry_type == 'Translational_Unit':
         start_codon = curPart['sequence'].find('atg')
@@ -89,7 +89,7 @@ def get_basic_parts(part_num: str):
     return jsonify({'parts': basic_parts}), 200
 
 
-def calc_burden(parts: list[dict], copy_number):
+def calc_burden(parts: list[dict], copy_number: float, use_prap: bool):
     common_parts = read_basic_part_csv()
     common_parts_map = {}
     for part_type in common_parts:
@@ -111,7 +111,7 @@ def calc_burden(parts: list[dict], copy_number):
         if rbs['seq'] in common_parts_map:
             rbs_strength = common_parts_map[rbs['seq']]
         else:
-            rbs_strength = calc_rbs_strength(rbs['seq'], cds)
+            rbs_strength = calc_rbs_strength(rbs['seq'], cds, use_prap)
         if rbs_strength is None:
             return jsonify({'message': 'Failed to calculate RBS strength'}), 400
         ret_values.append(rbs_strength)
@@ -139,8 +139,11 @@ def calc_promoter_strength(prom_seq: str, rbs_seq: str):
 
 from burden.rbs_calculator.utils import run_rbs_predictor
 
-def calc_rbs_strength(rbs_seq: str, cds: str):
-    rbs_seq = (PROMOTER_RBS_SCAR + rbs_seq + RBS_CDS_SCAR).upper()
+def calc_rbs_strength(rbs_seq: str, cds: str, use_prap: bool):
+    if use_prap:
+        rbs_seq = (PRAP_RBS_PRE_SEQ + rbs_seq + PRAP_RBS_CDS_SEQ).upper()
+    else:
+        rbs_seq = (PROMOTER_RBS_SCAR + rbs_seq + RBS_CDS_SCAR).upper()
     post_seq = cds.upper()
     res = run_rbs_predictor('', post_seq, rbs_seq)
     return K_rbs * np.exp(-b_rbs * res.dG_total_list[0])

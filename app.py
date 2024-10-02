@@ -69,10 +69,10 @@ def handle_get_basic_parts():
 @app.route('/api/burden/calculate', methods=['POST'])
 def handle_calc_burden():
     data = request.json
-    if not data or not data.get('parts') or not data.get('copy_number'):
+    if not data or not data.get('parts') or not data.get('copy_number') or not data.get('use_prap'):
         app.logger.warning('Missing data')
         return jsonify({"message": "Missing data"}), 400
-    res = calc_burden(data.get('parts'), float(data.get('copy_number')))
+    res = calc_burden(data.get('parts'), float(data.get('copy_number')), data.get('use_prap') == 'true')
     return res
     
 def allowed_file(filename):
