@@ -26,7 +26,7 @@
 
 ## :dart: About
 
-PartHub 3.0 focuses on two critical aspects of parts: **burden estimation** and **similarity query**.
+PartHub 3.0 focuses on two critical aspects of parts: **burden prediction** and **similarity estimation**.
 
 For more information, please visit our [wiki](https://2024.igem.wiki/fudan/software).
 
