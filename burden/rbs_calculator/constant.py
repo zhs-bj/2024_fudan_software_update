@@ -1,5 +1,10 @@
 """
-Reference: https://gitlab.igem.org/2023/software-tools/fudan
+Reference:
+1. Tian, T., & Salis, H. M. (2015). A predictive biophysical model of
+   translational coupling to coordinate and control protein expression in
+   bacterial operons. Nucleic Acids Research, 43(14), 7137-7151.
+   https://doi.org/10.1093/nar/gkv635
+2. https://gitlab.igem.org/2023/software-tools/fudan
 """
 # From experimental characterization from Salis, H. M., Mirsky, E. A., & Voigt, C. A. (2009). Automated design of
 # synthetic ribosome binding sites to control protein expression. Nature Biotechnology, 27(10), Article 10.

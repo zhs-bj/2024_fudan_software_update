@@ -1,17 +1,21 @@
 """
-Reference: https://gitlab.igem.org/2023/software-tools/fudan
+Reference:
+1. Tian, T., & Salis, H. M. (2015). A predictive biophysical model of
+   translational coupling to coordinate and control protein expression in
+   bacterial operons. Nucleic Acids Research, 43(14), 7137-7151.
+   https://doi.org/10.1093/nar/gkv635
+2. https://gitlab.igem.org/2023/software-tools/fudan
+3. Liu, Y., Wu, Z., Wu, D., Gao, N., & Lin, J. (2023). Reconstitution of Multi-Protein Complexes through
+   Ribozyme-Assisted Polycistronic Co-Expression. ACS Synthetic Biology, 12(1), 136–143.
+   https://doi.org/10.1021/acssynbio.2c00416
+4. Salis, H. (2023). Hsalis/Ribosome-Binding-Site-Calculator-v1.0 [Python].
+   https://github.com/hsalis/Ribosome-Binding-Site-Calculator-v1.0 (Original work published 2009)
+5. Salis, H. M. (2011). The ribosome binding site calculator. Methods in Enzymology, 498, 19–42.
+   https://doi.org/10.1016/B978-0-12-385120-8.00002-4
+6. Lorenz, R., Bernhart, S. H., Höner zu Siederdissen, C., Tafer, H., Flamm, C., Stadler, P. F., &
+   Hofacker, I. L. (2011). ViennaRNA Package 2.0. Algorithms for Molecular Biology, 6(1), 26.
+   https://doi.org/10.1186/1748-7188-6-26
 """
-# References
-# 1. Liu, Y., Wu, Z., Wu, D., Gao, N., & Lin, J. (2023). Reconstitution of Multi-Protein Complexes through
-# Ribozyme-Assisted Polycistronic Co-Expression. ACS Synthetic Biology, 12(1), 136–143.
-# https://doi.org/10.1021/acssynbio.2c00416
-# 2. Salis, H. (2023). Hsalis/Ribosome-Binding-Site-Calculator-v1.0 [Python].
-# https://github.com/hsalis/Ribosome-Binding-Site-Calculator-v1.0 (Original work published 2009)
-# 3. Salis, H. M. (2011). The ribosome binding site calculator. Methods in Enzymology, 498, 19–42.
-# https://doi.org/10.1016/B978-0-12-385120-8.00002-4
-# 4. Lorenz, R., Bernhart, S. H., Höner zu Siederdissen, C., Tafer, H., Flamm, C., Stadler, P. F., &
-# Hofacker, I. L. (2011). ViennaRNA Package 2.0. Algorithms for Molecular Biology, 6(1), 26.
-# https://doi.org/10.1186/1748-7188-6-26
 
 import math
 import sys
