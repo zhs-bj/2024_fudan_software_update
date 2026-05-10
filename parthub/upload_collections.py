@@ -22,19 +22,6 @@ from config import parthub_config
 graph = Graph(parthub_config["serverUrl"], auth=("neo4j", "igem2024"))
 graph.delete_all()
 
-query= '''
-CALL gds.graph.exists('parthub')
-  YIELD exists
-RETURN exists
-'''
-parthub_exists = graph.run(query).data()[0]['exists']
-if parthub_exists:
-    print('Graph parthub already exists, deleting it...')
-    query = '''
-    CALL gds.graph.drop('parthub')
-    '''
-    graph.run(query)
-
 def get_node_color(time: str, is_basic: bool):
     begin_time = datetime.strptime('2004-1-1', r'%Y-%m-%d')
     try:
@@ -109,7 +96,8 @@ for yr in range(2004, 2024):
                         isfavorite=str(part_isfavorite), twins=part_twins_list, twins_num=str(len(part_twins_list)),
                         cited_by=part_used_list, year=part_year, cites=str(len(part_used_list)), ref=part_using_list, deep_subparts=part_using_deep_list,
                         citing=str(len(part_using_list)), designer=part_designer, prweight=max(1,len(part_used_list) * 0.5+len(part_using_list)+0.75 * len(part_twins_list)),
-                        color=get_node_color(part_date, part_is_basic), category=part_category)
+                        color=get_node_color(part_date, part_is_basic), category=part_category,
+                        pagerank=0.15, community=0, nodesize=30)
         part_list.append(part_node)
         part_node_dict.update({str(part_num): part_node})
         fout.write(f'>{part_num}\n{part_sequence}\n')
@@ -152,49 +140,5 @@ for yr in range(2004, 2024):
     graph.commit(tx)
 
 fout.close()
-
-print('Creating graph...', flush=True)
-# create graph
-query = """
-CALL gds.graph.project(
-'parthub',
-'Part',
-'refers to',
-{
-    relationshipProperties: 'weight'
-}
-)
-"""
-graph.run(query)
-
-print('Calculating PageRanks...', flush=True)
-# calculate PageRanks
-query = '''
-CALL gds.pageRank.write('parthub', {
-maxIterations: 20,
-dampingFactor: 0.85,
-writeProperty: 'pagerank',
-relationshipWeightProperty: 'weight'
-})
-YIELD nodePropertiesWritten, ranIterations
-'''
-graph.run(query)
-
-# generate nodesize
-query = '''
-MATCH (n:Part)
-SET n.nodesize = (n.pagerank - 0.15000000000000002) / (46.258541601845714 - 0.15000000000000002) * 90 + 30
-'''
-graph.run(query, flush=True)
-
-print('Running Louvain...')
-# run Louvain method
-query = '''
-CALL gds.louvain.write('parthub', {
-writeProperty: 'community',
-relationshipWeightProperty: 'weight'
-})
-'''
-graph.run(query)
 
 print('Done!')

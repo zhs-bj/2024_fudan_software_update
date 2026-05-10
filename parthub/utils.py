@@ -2,19 +2,21 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 @File : utils.py
-@Author : Hongchen Chen
+@Author : Hongchen Chen / Assistant
 @Time : 2024/9/10 22:50
 """
 import os
-from operator import itemgetter
+import re
 from typing import Any
+from time import time
 
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from flask import jsonify, Response
 from py2neo import Node, Graph, NodeMatcher
-import re
+import pandas as pd
+
 import sys
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
@@ -24,108 +26,295 @@ graph = Graph(parthub_config["serverUrl"], auth=("neo4j", "igem2024"), name="neo
 node_matcher = NodeMatcher(graph)
 
 
-def content_match(content: str, search_key: str) -> str:
+# ---------------------------------------------------------------------------
+# Lucene query helpers
+# ---------------------------------------------------------------------------
+
+def escape_lucene(text: str) -> str:
     """
-    :param content: content of selected node
-    :param search_key: inputted search keyword
-    :return: content that matches search keyword
+    Escape special characters in Lucene query syntax.
+    If the text contains spaces, wrap it in double quotes.
     """
-    content_lst = re.split(' ', content)
-    for i in range(len(content_lst)):
-        if search_key in content_lst[i]:
-            r = 20
-            if i >= r and i + r < len(content_lst) - 1:
-                return ' '.join(content_lst[i - r:i + r])
-            elif i >= r and i + r > len(content_lst) - 1:
-                return ' '.join(content_lst[i - r:len(content_lst) - 1])
-            elif i < r and i + r < len(content_lst) - 1:
-                return ' '.join(content_lst[0:i + r])
-            else:
-                return ' '.join(content_lst[0:len(content_lst) - 1])
+    if not text:
+        return ""
+    if ' ' in text:
+        escaped = text.replace('"', '\\"')
+        return f'"{escaped}"'
+    special_chars = r'+-&|!(){}[]^"~*?:\\/'
+    return re.sub(r'([{}])'.format(re.escape(special_chars)), r'\\\1', text)
 
 
-def search_node(search_key: str, search_type: str) -> list[dict[str | Any, str | Any]] | None:
+def build_fulltext_query(search_key: str, search_type: str) -> str:
     """
-    :param search_key: inputted search keyword
-    :param search_type: type of the search keyword
-    :return: a list contains searched dict format of nodes
+    Build a Lucene full-text query string.
+    Single word -> field:word~
+    Multiple words -> field:word1~ AND field:word2~ ...
     """
+    words = search_key.split()
+    if len(words) == 1:
+        return f"{search_type}:{escape_lucene(words[0])}~"
+    terms = [f"{search_type}:{escape_lucene(w)}~" for w in words]
+    return " AND ".join(terms)
+
+
+# ---------------------------------------------------------------------------
+# Node result processing
+# ---------------------------------------------------------------------------
+
+KEYS_REQUIRED = [
+    'year', 'team', 'designer', 'type', 'number', 'name', 'contents',
+    'cites', 'twins_num', 'length', 'isfavorite', 'released', 'date',
+    'url', 'pagerank', 'community'
+]
+
+
+def _process_node_records(records, search_type: str) -> list[dict[str, Any]]:
+    """Common logic to convert Neo4j records to dict list."""
     node_dic_list = []
-    if search_type == 'sequence':
-        search_key = search_key.lower()
-        key_inverse = search_key.replace("a", "t").replace("t", "a").replace("c", "g").replace("g", "c")
-        sequence_query = "_.sequence =~ '(?i).*key.*' OR _.sequence =~ '(?i).*inverse.*'"
-        sequence_query_temp = re.sub('key', search_key.lower(), sequence_query)
-        sequence_query = re.sub('inverse', key_inverse, sequence_query_temp)
-        nodes = list(node_matcher.match("Part").where(sequence_query))
-    else:
-        query = "_.type =~ '(?i).*key.*'"
-        query_temp = re.sub('type', search_type, query)
-        query = re.sub('key', search_key, query_temp)
-        nodes = list(node_matcher.match("Part").where(query))
-    if not nodes:
-        return
-    keys_required = ['year', 'team', 'designer', 'type', 'number', 'name', 'contents', 'cites', 'twins_num', 'length',
-                     'isfavorite', 'released', 'date', 'url', 'pagerank', 'community']
-    for node in nodes:
+    for record in records:
+        node = record if isinstance(record, Node) else record.get('node')
+        score = 0.0 if isinstance(record, Node) else record.get('score', 0.0)
+        if node is None:
+            continue
         node_dic = dict(node)
-        node_dic = {key: value for key, value in node_dic.items() if key in keys_required}
+        node_dic = {key: value for key, value in node_dic.items() if key in KEYS_REQUIRED}
+        node_dic['_score'] = float(score)
         if search_type == 'contents':
-            node_dic['matchedContents'] = content_match(node_dic['contents'], search_key)
+            node_dic['matchedContents'] = content_match(node_dic.get('contents', ''))
             node_dic.pop('contents', None)
-            node_dic_list.append(node_dic)
-        elif search_type == 'name':
-            node_dic['matchedContents'] = node_dic['contents'][:200]
-            node_dic.pop('contents', None)
-            node_dic_list.append(node_dic)
         else:
-            node_dic['matchedContents'] = node_dic['contents'][:200]
+            node_dic['matchedContents'] = node_dic.get('contents', '')[:200]
             node_dic.pop('contents', None)
-            node_dic_list.append(node_dic)
+        node_dic_list.append(node_dic)
     return node_dic_list
 
 
+def content_match(content: str) -> str:
+    """
+    :param content: content of selected node
+    :return: content preview
+    """
+    if not content or content == 'nan':
+        return ''
+    content_lst = content.split(' ')
+    if len(content_lst) <= 40:
+        return ' '.join(content_lst)
+    return ' '.join(content_lst[:40]) + '...'
+
+
+# ---------------------------------------------------------------------------
+# Full-text search (Phase 1)
+# ---------------------------------------------------------------------------
+
+def search_node(search_key: str, search_type: str) -> list[dict[str | Any, str | Any]] | None:
+    if search_type == 'sequence':
+        return search_sequence(search_key)
+
+    # Try full-text index first
+    result = search_node_fulltext(search_key, search_type)
+    if result is not None:
+        return result
+
+    # Fallback to legacy regex matching
+    return search_node_legacy(search_key, search_type)
+
+
+def search_node_fulltext(search_key: str, search_type: str) -> list[dict[str | Any, str | Any]] | None:
+    query_str = build_fulltext_query(search_key, search_type)
+    cypher = """
+    CALL db.index.fulltext.queryNodes('partSearch', $query)
+    YIELD node, score
+    RETURN node, score
+    LIMIT 1000
+    """
+    try:
+        results = graph.run(cypher, query=query_str).data()
+    except Exception as e:
+        # Index may not exist or other error; silently fallback
+        print(f"[Fulltext search warning] {e}")
+        return None
+
+    # Index exists but no matches -> return empty list (do not fallback to legacy)
+    if not results:
+        return []
+    return _process_node_records(results, search_type)
+
+
+def search_node_legacy(search_key: str, search_type: str) -> list[dict[str | Any, str | Any]] | None:
+    """Original regex-based search (fallback)."""
+    query = f"_.{search_type} =~ '(?i).*{re.escape(search_key)}.*'"
+    nodes = list(node_matcher.match("Part").where(query))
+    if not nodes:
+        return None
+    return _process_node_records(nodes, search_type)
+
+
+# ---------------------------------------------------------------------------
+# Sequence search with BLAST fallback
+# ---------------------------------------------------------------------------
+
+def search_sequence(search_key: str) -> list[dict[str | Any, str | Any]] | None:
+    """
+    1. Exact match (including reverse complement).
+    2. If no results, fallback to BLAST short-sequence alignment.
+    """
+    search_key = search_key.lower()
+    key_inverse = search_key.replace("a", "t").replace("t", "a").replace("c", "g").replace("g", "c")
+
+    sequence_query = "_.sequence =~ '(?i).*key.*' OR _.sequence =~ '(?i).*inverse.*'"
+    sequence_query_temp = re.sub('key', search_key, sequence_query)
+    sequence_query = re.sub('inverse', key_inverse, sequence_query_temp)
+    nodes = list(node_matcher.match("Part").where(sequence_query))
+
+    if nodes:
+        return _process_node_records(nodes, 'sequence')
+
+    # Fallback to BLAST for fuzzy sequence matching
+    return blast_short_match(search_key)
+
+
+def blast_short_match(seq: str) -> list[dict[str | Any, str | Any]] | None:
+    """Run blastn-short to tolerate mismatches in short sequences."""
+    seq = seq.upper()
+    cur_time = int(time() * 1e6)
+    temp_query = f"./similarity/data/temp_query_{cur_time}.fasta"
+    query_ans = f"./similarity/data/query_ans_{cur_time}.txt"
+
+    try:
+        with open(temp_query, "w") as fout:
+            fout.write(f">query\n{seq}\n")
+
+        cmd = (
+            f"./blast+/bin/blastn -query {temp_query} "
+            f"-db ./similarity/data/seqdump.fasta "
+            f"-out {query_ans} -evalue 1e-3 -outfmt 6 "
+            f"-max_target_seqs 50"
+        )
+        if len(seq) <= 32:
+            cmd += " -task blastn-short"
+
+        status = os.system(cmd)
+        if status != 0:
+            return None
+
+        try:
+            df = pd.read_csv(query_ans, sep="\t", header=None)
+        except pd.errors.EmptyDataError:
+            return []
+
+        parts = set(df.iloc[:, 1])
+        results = []
+        for part in parts:
+            matched_node = node_matcher.match("Part", number=part).first()
+            if matched_node is None:
+                continue
+            node_dic = dict(matched_node)
+            node_dic = {key: value for key, value in node_dic.items() if key in KEYS_REQUIRED}
+            node_dic['matchedContents'] = node_dic.get('contents', '')[:200]
+            node_dic.pop('contents', None)
+            node_dic['_score'] = 0.0
+            results.append(node_dic)
+        return results
+    finally:
+        if os.path.exists(temp_query):
+            os.remove(temp_query)
+        if os.path.exists(query_ans):
+            os.remove(query_ans)
+
+
+# ---------------------------------------------------------------------------
+# Multiple keyword search
+# ---------------------------------------------------------------------------
+
 def multiple_search(kwd_list: list[str], search_type: str, flag: str) -> None | list[dict] | list[Any] | Any:
-    """
-    :param kwd_list: list contains all inputted search keywords for multiple search
-    :param search_type: type of the search keyword
-    :param flag: logical flag, like 'AND'
-    :return: a list contains searched dict format of nodes
-    """
     if len(kwd_list) < 2:
-        return
+        return None
+
+    # Try full-text index first
+    result = multiple_search_fulltext(kwd_list, search_type, flag)
+    if result is not None:
+        return result
+
+    # Fallback to legacy manual intersection/union
+    return multiple_search_legacy(kwd_list, search_type, flag)
+
+
+def multiple_search_fulltext(kwd_list: list[str], search_type: str, flag: str) -> None | list[dict] | list[Any] | Any:
+    grouped_terms = []
+    for kwd in kwd_list:
+        words = kwd.split()
+        if len(words) == 1:
+            grouped_terms.append(f"{search_type}:{escape_lucene(words[0])}~")
+        else:
+            sub_terms = [f"{search_type}:{escape_lucene(w)}~" for w in words]
+            grouped_terms.append(f"({' AND '.join(sub_terms)})")
+
+    lucene_flag = "AND" if flag == 'AND' else "OR"
+    query_str = f" {lucene_flag} ".join(grouped_terms)
+
+    cypher = """
+    CALL db.index.fulltext.queryNodes('partSearch', $query)
+    YIELD node, score
+    RETURN node, score
+    LIMIT 1000
+    """
+    try:
+        results = graph.run(cypher, query=query_str).data()
+    except Exception as e:
+        print(f"[Fulltext multi-search warning] {e}")
+        return None
+
+    # Index exists but no matches -> return empty list (do not fallback)
+    if not results:
+        return []
+    return _process_node_records(results, search_type)
+
+
+def multiple_search_legacy(kwd_list: list[str], search_type: str, flag: str) -> None | list[dict] | list[Any] | Any:
+    """Original manual AND/OR logic (fallback)."""
     res = []
     if flag == 'AND':
-        res = search_node(kwd_list[0], search_type)
+        res = search_node_legacy(kwd_list[0], search_type)
         num_list = get_num_list(res)
         for kwd in kwd_list[1:]:
             if res:
-                res = [i for i in search_node(kwd, search_type) if i.get('number') in num_list]
+                res = [i for i in search_node_legacy(kwd, search_type) if i.get('number') in num_list]
                 num_list = get_num_list(res)
             else:
-                return
+                return None
     else:
         num_list = []
         for kwd in kwd_list:
-            res = res + [i for i in search_node(kwd, search_type) if i.get('number') not in num_list]
+            res = res + [i for i in search_node_legacy(kwd, search_type) if i.get('number') not in num_list]
             num_list = get_num_list(res)
     return res
 
 
 def get_num_list(node_dic_list: list[dict]) -> list[str]:
-    """
-    :param node_dic_list: list contains searched dict format of nodes
-    :return: a list contains numbers of each node
-    """
     return [i.get('number') for i in node_dic_list]
 
 
+# ---------------------------------------------------------------------------
+# Sorting
+# ---------------------------------------------------------------------------
+
 def sort_node(node_dic_lst: list[dict]):
     """
-    :param node_dic_lst: list contains searched dict format of nodes
-    :return: sorted list contains searched dict format of nodes
+    Sort by combined score (Lucene relevance * PageRank weighting),
+    then deduplicate by community.
     """
-    sorted_node_dic_lst = sorted(node_dic_lst, key=itemgetter('pagerank'), reverse=True)
+    for item in node_dic_lst:
+        lucene_score = item.pop('_score', 0.0)
+        pagerank = float(item.get('pagerank', 0.15))
+        # Normalize pagerank roughly to [0, 1]
+        normalized_pr = max(0.0, min(1.0, (pagerank - 0.15) / 50.0))
+        item['_combined_score'] = lucene_score * (1 + normalized_pr * 2)
+
+    sorted_node_dic_lst = sorted(node_dic_lst, key=lambda x: x['_combined_score'], reverse=True)
+
+    for item in sorted_node_dic_lst:
+        item.pop('_combined_score', None)
+
     seen_communities = set()
     unique_community_list = []
     else_list = []
@@ -137,6 +326,10 @@ def sort_node(node_dic_lst: list[dict]):
             else_list.append(item)
     return unique_community_list + else_list
 
+
+# ---------------------------------------------------------------------------
+# Public API entry
+# ---------------------------------------------------------------------------
 
 def parthub_search(search_key: str, search_type: str) -> tuple[Response, int]:
     if ' AND ' in search_key:
@@ -153,16 +346,16 @@ def parthub_search(search_key: str, search_type: str) -> tuple[Response, int]:
         return jsonify({'message': f'No search result found: key={search_key}, type={search_type}'}), 200
 
 
+# ---------------------------------------------------------------------------
+# File generation helpers
+# ---------------------------------------------------------------------------
+
 def init_create() -> None:
     if not os.path.exists(r'./parthub'):
         os.makedirs(r'./parthub')
 
 
 def create_parthub_seq_file(part_id: str) -> str:
-    """
-    :param part_id: the id of the part, like BBa_K3606003
-    :return: path of the sequence file in GeneBank format
-    """
     init_create()
     filename = part_id + '.gb'
     query = """
@@ -179,10 +372,6 @@ def create_parthub_seq_file(part_id: str) -> str:
 
 
 def get_part_id(name: str) -> str:
-    """
-    :param name: the id of the part, like BBa_K3606003
-    :return: part id in neo4j database
-    """
     query = """
     MATCH (p:Part {number: 'part_id'})
     RETURN ID(p);

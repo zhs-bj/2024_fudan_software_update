@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM docker.m.daocloud.io/library/python:3.10-slim
 RUN apt-get update && apt-get install -y wget gcc g++
 WORKDIR /app
 COPY requirements.txt /app/
@@ -7,6 +7,7 @@ COPY webUI/template /app/webUI/template
 COPY burden /app/burden
 COPY parthub/upload_collections.py /app/parthub/upload_collections.py
 COPY parthub/utils.py /app/parthub/utils.py
+COPY parthub/init_fulltext_index.py /app/parthub/init_fulltext_index.py
 COPY app.py /app/
 COPY config.py /app/
 COPY parthub/collections/* /app/parthub/collections/
