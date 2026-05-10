@@ -142,3 +142,16 @@ Developed by Hongcheng Chen ([@chc1234567890](https://github.com/chc1234567890))
 <br>
 
 <a href="#top">Back to top</a>
+
+## 更新日志
+
+### 2025-05-03
+
+- **修复搜索 Bug**：修复 `parthub/utils.py` 中 `search_node_legacy` 的正则替换逻辑错误。之前搜索 **Content** 类型时，`contents` 字段名会被错误替换成不存在的 `concontents`，导致 Content 搜索永远返回空。
+- **新增模糊搜索支持**：引入 Neo4j 全文索引（Lucene）实现拼写容错搜索。现在输入 `promotr` 也能匹配到 `promoter`，无需完全正确拼写。
+- **新增 BLAST 序列搜索降级**：当精确序列匹配找不到结果时，自动 fallback 到 `blastn-short` 模糊比对，提升短序列搜索的召回率。
+- **优化 Docker 部署**：
+  - `Dockerfile` 改用 DaoCloud 国内镜像源，解决国内拉取基础镜像超时问题；移除 `blast.tar.gz` 的本地 COPY，改为容器启动时自动下载。
+  - `flask-compose.sh` 修正 BLAST 下载链接（从 `LATEST` 改为固定版本 `2.16.0`），并新增容器启动时自动创建 Neo4j 全文索引的逻辑。
+  - `upload_collections.py` 移除 GDS 图算法（PageRank、Louvain）的初始化代码，简化容器启动流程，避免 Neo4j 插件依赖问题。
+- **新增 `init_fulltext_index.py`**：独立管理 Neo4j 全文索引的创建与删除，支持命令行 `create` / `drop` 操作。
