@@ -36,7 +36,7 @@
                 <a-input
                   v-model:value="formState.query"
                   style="width: 80%"
-                  placeholder="Enter search content..."
+                  :placeholder="formState.type === 'feature' ? 'Describe the function you need, e.g. green fluorescent protein...' : 'Enter search content...'"
                 >
                 </a-input>
                 <a-button slot="suffix" type="primary" html-type="submit">
@@ -59,6 +59,7 @@
                   <a-radio-button value="designer"> Designer </a-radio-button>
                   <a-radio-button value="team"> Team </a-radio-button>
                   <a-radio-button value="contents"> Content </a-radio-button>
+                  <a-radio-button value="feature"> Feature </a-radio-button>
                 </a-radio-group>
               </a-form-item>
             </a-form>
@@ -161,6 +162,11 @@ export default {
       }
       localStorage.setItem("partHubQuery", values.query);
       localStorage.setItem("partHubType", values.type);
+      if (values.type === "feature") {
+        localStorage.setItem("partHubSearchMode", "semantic");
+      } else {
+        localStorage.setItem("partHubSearchMode", "keyword");
+      }
       window.location.href = "/parts";
     },
     onFinishFailed(errorInfo) {

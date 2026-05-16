@@ -8,6 +8,8 @@ COPY burden /app/burden
 COPY parthub/upload_collections.py /app/parthub/upload_collections.py
 COPY parthub/utils.py /app/parthub/utils.py
 COPY parthub/init_fulltext_index.py /app/parthub/init_fulltext_index.py
+COPY parthub/semantic_search.py /app/parthub/semantic_search.py
+COPY parthub/build_semantic_index.py /app/parthub/build_semantic_index.py
 COPY app.py /app/
 COPY config.py /app/
 COPY parthub/collections/* /app/parthub/collections/

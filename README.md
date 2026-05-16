@@ -151,34 +151,7 @@ Developed by Hongcheng Chen ([@chc1234567890](https://github.com/chc1234567890))
 
 ---
 
-#### 1. 修复 Content 字段搜索 Bug（`parthub/utils.py`）
-
-**问题描述**
-
-原代码使用 `re.sub('type', search_type, query)` 进行占位符替换，意图将模板字符串中的 `type` 替换为实际搜索字段名。但当 `search_type` 为 `contents` 时，正则模式 `type` 会错误地匹配到 `contents` 内部的子串 `type`，导致字段名被篡改为不存在的 `concontents`，查询永远返回空。
-
-**修复方式**
-
-去掉两层 `re.sub` 的迂回替换，改用 f-string 直接拼接，并对 `search_key` 使用 `re.escape` 防止注入：
-
-```python
-# 修复前（错误）
-query = f"_.{search_type} =~ '(?i).*key.*'"
-query_temp = re.sub('type', search_type, query)
-query = re.sub('key', search_key, query_temp)
-
-# 修复后（正确）
-query = f"_.{search_type} =~ '(?i).*{re.escape(search_key)}.*'"
-```
-
-**影响范围**
-
-- 修复前：选择 **Content** 搜索类型时，无论输入什么关键词都返回 `No search result found`。
-- 修复后：**Content** 搜索恢复正常，可正确匹配零件描述中的关键词。
-
----
-
-#### 2. 新增全文索引模糊搜索（`parthub/utils.py` + `init_fulltext_index.py`）
+#### 1. 新增全文索引模糊搜索（`parthub/utils.py` + `init_fulltext_index.py`）
 
 **功能说明**
 
@@ -271,3 +244,87 @@ query = f"_.{search_type} =~ '(?i).*{re.escape(search_key)}.*'"
 
 - **前端搜索类型默认值**：`parthub.vue` 中 `searchType` 默认仍为 `id`（实际对应 `number` 字段），用户搜索时需注意切换为 **Name** 或 **Content** 以获得最佳体验。
 - **代码结构**：`utils.py` 按功能模块拆分为 Lucene 查询 helpers、全文搜索、Legacy 搜索、序列搜索、排序等独立区块，提升可维护性。
+
+### 2026-05-16
+
+本次更新新增**语义搜索（Semantic Search / Feature Search）**功能，用户可通过自然语言描述零件功能进行智能检索，无需记忆精确名称或关键词。
+
+---
+
+#### 1. 新增语义搜索功能
+
+**功能说明**
+
+在原有 ID / Name / Sequence / Designer / Team / Content 六种搜索类型的基础上，新增 **Feature** 搜索模式。用户输入自然语言描述（如 *"protein that glows green"*、*"promoter activated by arabinose"*），系统通过语义向量相似度返回最相关的零件。
+
+**技术实现**
+
+- **Embedding 模型**：采用 `sentence-transformers/all-MiniLM-L6-v2`（384 维，开源轻量）。
+- **离线索引**：`parthub/build_semantic_index.py` 遍历所有 Part 节点，将 `name + contents` 预编码为 embedding 矩阵，持久化到 `parthub/semantic_data/`。
+- **在线检索**：用户查询实时编码为向量，通过归一化余弦相似度与全库预计算向量比对，返回 Top-K 最相似零件。
+- **排序依据**：纯语义相似度得分 `_score`（范围 0~1），结果页以 **Similarity: xx.x%** 标签展示。
+
+**新增文件**
+
+- `parthub/semantic_search.py`：核心语义搜索模块，含模型懒加载、embedding 计算、相似度检索、Neo4j 节点召回。
+- `parthub/build_semantic_index.py`：离线构建脚本，首次部署或数据更新后运行一次即可。
+
+**前后对比**
+
+| 场景 | 修复前（关键词搜索） | 修复后（语义搜索） |
+|------|-------------------|-------------------|
+| 描述性查询 `protein that glows green` | 无精确关键词，返回空 | 理解语义，返回 GFP 等荧光蛋白 |
+| 同义表达 `antibiotic resistance for kanamycin` | 必须匹配字段文本 | 向量相似度匹配，容忍同义改写 |
+| 功能导向搜索 `high copy plasmid backbone` | 依赖内容中出现完整词组 | 语义层面匹配质粒骨架相关描述 |
+
+---
+
+#### 2. 新增语义搜索 API（`app.py`）
+
+- **路由**：`POST /api/parthub/semantic_search`
+- **请求体**：`{"query": "描述文本", "top_k": 50}`
+- **响应**：零件 JSON 数组，含 `_score` 相似度字段；若索引未生成返回 503 提示。
+
+---
+
+#### 3. 前端适配语义搜索
+
+- **`webUI/src/views/parthub/parthub.vue`**：搜索类型增加 **Feature** 单选按钮；选择后输入框 placeholder 动态提示用户输入自然语言描述。
+- **`webUI/src/views/parts/parts.vue`**：根据 `localStorage` 中的 `partHubSearchMode` 自动路由到语义搜索 API 或原有关键词搜索 API；结果页保留 Feature 选项，支持在结果页直接切换搜索模式。
+- **`webUI/src/components/partcard.vue`**：语义搜索模式下显示橙色 **Similarity** 标签，并关闭关键词红色高亮（避免自然语言查询词无意义高亮）。
+
+---
+
+#### 4. Docker 部署增强
+
+##### 4.1 `Dockerfile`
+
+- 新增 COPY 指令，将 `parthub/semantic_search.py` 和 `parthub/build_semantic_index.py` 打包进容器，确保语义搜索模块可用。
+
+##### 4.2 `docker-compose.yml`
+
+- **数据持久化**：Neo4j 服务新增 bind mount，将容器内 `/data` 映射到宿主机 `D:\Neo4jData\parthub`，避免数据存储在 Docker 虚拟磁盘中，方便用户直接管理磁盘空间。
+
+##### 4.3 `flask-compose.sh`
+
+- **自动构建语义索引**：在数据导入、全文索引创建、BLAST 数据库构建完成后，自动执行 `python parthub/build_semantic_index.py`，下载模型并生成 embedding，实现"一键启动，全功能可用"。
+
+**部署命令**
+
+```bash
+docker-compose up --build -d
+```
+
+启动后访问 [http://localhost:5000/parthub](http://localhost:5000/parthub)，选择 **Feature** 即可体验语义搜索。
+
+---
+
+#### 5. 依赖更新
+
+- `requirements.txt`：新增 `torch==2.12.0` 和 `sentence-transformers==5.5.0`。
+
+---
+
+#### 6. 其他改进
+
+- **`parthub/semantic_search.py`** 中 Neo4j 连接采用懒加载模式，避免模块导入时即尝试连接数据库，提升启动稳定性。

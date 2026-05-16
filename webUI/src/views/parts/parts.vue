@@ -68,6 +68,7 @@
                   <a-radio-button value="designer"> Designer </a-radio-button>
                   <a-radio-button value="team"> Team </a-radio-button>
                   <a-radio-button value="contents"> Content </a-radio-button>
+                  <a-radio-button value="feature"> Feature </a-radio-button>
                 </a-radio-group>
               </a-form-item>
             </a-form>
@@ -77,6 +78,7 @@
             v-else
             :list-data="listData"
             :search-query="searchQuery"
+            :is-semantic="isSemantic"
             style="width: 95%"
             @clickTitle="showPart"
           >
@@ -106,14 +108,14 @@ export default {
   created() {
     const searchType = localStorage.getItem("partHubType");
     const searchQuery = localStorage.getItem("partHubQuery");
+    const searchMode = localStorage.getItem("partHubSearchMode");
     if (!searchType || !searchQuery) {
       window.location.href = "/parthub";
     }
+    const apiUrl = searchMode === "semantic" ? "/api/parthub/semantic_search" : "/api/parthub/search";
+    const payload = searchMode === "semantic" ? { query: searchQuery } : { partHubType: searchType, partHubQuery: searchQuery };
     axios
-      .post("/api/parthub/search", {
-        partHubType: searchType,
-        partHubQuery: searchQuery,
-      })
+      .post(apiUrl, payload)
       .then((response) => {
         console.log(response.data);
         if (response.data.message) {
@@ -140,6 +142,7 @@ export default {
       searchResults: [],
       searchType: localStorage.getItem("partHubType"),
       searchQuery: localStorage.getItem("partHubQuery"),
+      isSemantic: localStorage.getItem("partHubSearchMode") === "semantic",
       listData,
       loading: true,
       number: "",
@@ -157,6 +160,11 @@ export default {
       }
       localStorage.setItem("partHubQuery", values.query);
       localStorage.setItem("partHubType", values.type);
+      if (values.type === "feature") {
+        localStorage.setItem("partHubSearchMode", "semantic");
+      } else {
+        localStorage.setItem("partHubSearchMode", "keyword");
+      }
       window.location.href = "/parts";
     },
     onFinishFailed(errorInfo) {

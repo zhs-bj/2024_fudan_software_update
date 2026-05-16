@@ -15,6 +15,7 @@ from werkzeug.utils import secure_filename
 
 import config
 from parthub.utils import parthub_search, create_parthub_seq_file, get_part_id
+from parthub.semantic_search import semantic_search
 from similarity.utils import query_similarity, parse_part_file, add_new_part
 from burden.utils import read_basic_part_csv, get_basic_parts, calc_burden
 
@@ -139,6 +140,28 @@ def handle_parthub_search():
     query = data.get('partHubQuery')
     search_type = data.get('partHubType')
     return parthub_search(query, search_type)
+
+
+@app.route('/api/parthub/semantic_search', methods=['POST'])
+def handle_semantic_search():
+    data = request.json
+    if not data or not data.get('query'):
+        app.logger.warning('Missing query')
+        return jsonify({"message": "Missing query"}), 400
+    query = data.get('query')
+    top_k = data.get('top_k', 50)
+    try:
+        results = semantic_search(query, top_k=top_k)
+        if results:
+            return jsonify(results), 200
+        else:
+            return jsonify({'message': f'No semantic search results found for: {query}'}), 200
+    except RuntimeError as e:
+        app.logger.warning(str(e))
+        return jsonify({"message": str(e)}), 503
+    except Exception as e:
+        app.logger.error(f'Semantic search error: {e}')
+        return jsonify({"message": "Semantic search failed"}), 500
 
 
 @app.route('/api/parthub/config', methods=['POST'])

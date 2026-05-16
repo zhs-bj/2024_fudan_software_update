@@ -30,5 +30,8 @@ if [ $count -eq $max_attempts ]; then
 else
     python parthub/init_fulltext_index.py create
     ./blast+/bin/makeblastdb -in similarity/data/seqdump.fasta -dbtype nucl
+    echo "Building semantic search index..."
+    python parthub/build_semantic_index.py
+    echo "Starting Flask server..."
     python app.py --host=0.0.0.0
 fi

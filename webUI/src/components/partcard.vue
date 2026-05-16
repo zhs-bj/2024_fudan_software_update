@@ -14,6 +14,7 @@
               <a-tag color="green"> Team: {{ item.team }} </a-tag>
               <a-tag color="cyan"> Designer: {{ item.designer }} </a-tag>
               <a-tag color="blue"> Type: {{ item.type }} </a-tag>
+              <a-tag v-if="isSemantic && item._score" color="orange"> Similarity: {{ (item._score * 100).toFixed(1) }}% </a-tag>
             </div>
           </template>
           <template #title>
@@ -42,7 +43,7 @@
 import axios from "axios";
 
 export default {
-  props: ["listData", "searchQuery"],
+  props: ["listData", "searchQuery", "isSemantic"],
   data() {
     return {
       pagination: {
@@ -57,6 +58,9 @@ export default {
     highlight(content) {
       if (content === "nan") {
         return "";
+      }
+      if (this.isSemantic) {
+        return content + "...";
       }
       const regex = new RegExp(this.searchQuery, "gi");
       try {
