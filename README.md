@@ -328,3 +328,95 @@ docker-compose up --build -d
 #### 6. 其他改进
 
 - **`parthub/semantic_search.py`** 中 Neo4j 连接采用懒加载模式，避免模块导入时即尝试连接数据库，提升启动稳定性。
+
+---
+
+### 2026-05-17
+
+本次更新重点**修复语义搜索在 Docker 部署中的稳定性问题**，并优化持久化策略，确保重建容器后数据不丢失。
+
+---
+
+#### 1. 修复语义搜索模块导入失败（`parthub/__init__.py` + `flask-compose.sh`）
+
+**问题描述**
+
+容器启动时执行 `python parthub/build_semantic_index.py` 报 `ModuleNotFoundError: No module named 'parthub'`，导致语义索引无法自动生成。
+
+**修复内容**
+
+- 新增 `parthub/__init__.py`，将 `parthub` 目录声明为合法 Python 包。
+- 修改 `flask-compose.sh` 中的索引构建命令，添加 `PYTHONPATH=/app` 前缀，确保容器内模块导入路径正确。
+
+**前后对比**
+
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| 容器内运行 `build_semantic_index.py` | `ModuleNotFoundError` | 正常执行 |
+| 重建镜像后首次启动 | 索引缺失，Feature 搜索 503 | 自动构建索引 |
+
+---
+
+#### 2. 修复 HuggingFace 模型下载网络不可达（`docker-compose.yml`）
+
+**问题描述**
+
+中国大陆网络环境下，容器内默认访问 `huggingface.co` 下载 `all-MiniLM-L6-v2` 模型时出现 `[Errno 101] Network is unreachable`，导致模型加载失败。
+
+**修复内容**
+
+- 在 `docker-compose.yml` 的 flask 服务环境变量中新增 `HF_ENDPOINT=https://hf-mirror.com`，自动走 HuggingFace 国内镜像源。
+
+**前后对比**
+
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| 模型下载 | 连接 `huggingface.co` 超时失败 | 通过 `hf-mirror.com` 稳定下载 |
+| API 首次调用 | `RuntimeError: client has been closed` | 模型从本地缓存加载，秒级响应 |
+
+---
+
+#### 3. 持久化语义搜索索引（`docker-compose.yml`）
+
+**问题描述**
+
+语义索引 `embeddings.npy` 存储在容器内部，重建或重启 flask 容器后索引丢失，需重新运行构建脚本（约 15 分钟）。
+
+**修复内容**
+
+- 在 `docker-compose.yml` 中新增 bind mount：
+  ```yaml
+  volumes:
+    - D:\igem\igem_software\fudan_2024\parthub\semantic_data:/app/parthub/semantic_data
+  ```
+- 将索引文件持久化到宿主机项目目录，重建容器后自动复用已有索引。
+
+**前后对比**
+
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| 重建 flask 容器 | 索引丢失，需等待 15 分钟重建 | 索引保留，立即可用 |
+| 多机部署 | 每台机器独立构建 | 可复制 `semantic_data` 目录复用 |
+
+---
+
+#### 4. 修正 Neo4j 连接地址被硬编码覆盖（`app.py`）
+
+**问题描述**
+
+`app.py` 中 `parthub_config["serverUrl"] = 'bolt://localhost:7687'` 无条件执行，导致 Docker 环境下 `SERVER_URL` 环境变量被覆盖，语义搜索模块连接不到 Neo4j。
+
+**修复内容**
+
+- 改为条件赋值：仅在配置文件中未指定 `serverUrl` 时才使用本地默认值。
+  ```python
+  if not parthub_config.get("serverUrl"):
+      parthub_config["serverUrl"] = 'bolt://localhost:7687'
+  ```
+
+**前后对比**
+
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| Docker 部署 | 强制连接 `localhost:7687`，500 错误 | 尊重 `SERVER_URL` 环境变量 |
+| 本地开发 | 仍可用默认本地地址 | 仍可用默认本地地址 |
