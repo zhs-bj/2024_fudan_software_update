@@ -7,10 +7,13 @@ services:
       - "5000:5000"
     depends_on:
       - parthub
+    volumes:
+      - D:\igem\igem_software\fudan_2024\parthub\semantic_data:/app/parthub/semantic_data
     environment:
       - SERVER_URL=bolt://parthub:7687
       - SERVER_USER=neo4j
       - SERVER_PASSWORD=igem2024
+      - HF_ENDPOINT=https://hf-mirror.com
   parthub:
     image: neo4j:5.11
     restart: always

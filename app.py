@@ -20,7 +20,8 @@ from similarity.utils import query_similarity, parse_part_file, add_new_part
 from burden.utils import read_basic_part_csv, get_basic_parts, calc_burden
 
 parthub_config = config.parthub_config
-parthub_config["serverUrl"] = 'bolt://localhost:7687'
+if not parthub_config.get("serverUrl"):
+    parthub_config["serverUrl"] = 'bolt://localhost:7687'
 template_folder = path.abspath('webUI/template')
 static_folder = path.abspath('webUI/static')
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder, static_url_path='')

@@ -1,3 +1,29 @@
+echo "Waiting for Neo4j to be ready..."
+neo4j_ready=false
+for i in $(seq 1 60); do
+    python -c "
+from py2neo import Graph
+try:
+    g = Graph('bolt://parthub:7687', auth=('neo4j', 'igem2024'))
+    g.run('RETURN 1')
+    print('Neo4j is ready')
+    exit(0)
+except Exception as e:
+    exit(1)
+" 2>/dev/null
+    if [ $? -eq 0 ]; then
+        neo4j_ready=true
+        break
+    fi
+    echo "Neo4j not ready yet, waiting... ($i/60)"
+    sleep 5
+done
+
+if [ "$neo4j_ready" != "true" ]; then
+    echo "Neo4j did not become ready in time. Exiting."
+    exit 1
+fi
+
 count=0
 max_attempts=10
 
@@ -31,7 +57,7 @@ else
     python parthub/init_fulltext_index.py create
     ./blast+/bin/makeblastdb -in similarity/data/seqdump.fasta -dbtype nucl
     echo "Building semantic search index..."
-    python parthub/build_semantic_index.py
+    PYTHONPATH=/app python parthub/build_semantic_index.py
     echo "Starting Flask server..."
     python app.py --host=0.0.0.0
 fi
